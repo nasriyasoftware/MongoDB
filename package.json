@@ -1,0 +1,19 @@
+{
+  "name": "nasriya-mongodb",
+  "version": "1.0.0",
+  "description": "A lightweight package to generate v5 UUID on the go.",
+  "main": "adapter.ts",
+  "scripts": {
+    "test": "main.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nasriyasoftware/MongoDB"
+  },
+  "author": "Nasriya Software, LLC.",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^6.5.0",
+    "nasriya-uuid": "github:nasriyasoftware/uuid"
+  }
+}
