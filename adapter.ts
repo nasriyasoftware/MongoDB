@@ -345,7 +345,7 @@ class NasriyaData {
                 if (!('user' in options)) { throw new SyntaxError(`The client options are missing the "user" object. The "user" object is required when the "authorization" level is "User"`) }
                 if (!helpers.isRealObject(options.user)) { throw new TypeError(`The provided "user" value is not a valid. Expected an object but got ${typeof options.user}`) }
 
-                if (!('loggedIn' in options.user)) { throw new SyntaxError(`The "user" object is missing the "loggedIn" property`) }
+                if (helpers.isUndefined(options.user) || !('loggedIn' in options.user)) { throw new SyntaxError(`The "user" object is missing the "loggedIn" property`) }
                 if (typeof options.user.loggedIn !== 'boolean') { throw new TypeError(`The "loggedIn" property in the "user" object expected a boolean value but instead got ${typeof options.user.loggedIn}`) }
                 constructorOptions.user.loggedIn = options.user.loggedIn;
 

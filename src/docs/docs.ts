@@ -183,7 +183,7 @@ export interface ClientCreationOptions {
     /** The client authorization. Default: `User`. */
     authorization?: ClientAuthorization;
     /** The user object. Omitted when the `authorization` is `'System'`. */
-    user: ClientUser;
+    user?: ClientUser;
     /** Set a default database to be set on the client. */
     defaultDatabase?: string;
 }
