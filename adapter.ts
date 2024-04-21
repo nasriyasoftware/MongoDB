@@ -342,54 +342,30 @@ class NasriyaData {
             }
 
             if (constructorOptions.authorization === 'User') {
-                if (!('user' in options)) {
-                    throw new SyntaxError(`The client options are missing the "user" object. The "user" object is required when the "authorization" level is "User"`);
-                }
-                if (!helpers.isRealObject(options.user)) {
-                    throw new TypeError(`The provided "user" value is not a valid. Expected an object but got ${typeof options.user}`);
-                }
+                if (!('user' in options)) { throw new SyntaxError(`The client options are missing the "user" object. The "user" object is required when the "authorization" level is "User"`) }
+                if (!helpers.isRealObject(options.user)) { throw new TypeError(`The provided "user" value is not a valid. Expected an object but got ${typeof options.user}`) }
 
-                if (!('loggedIn' in options.user)) {
-                    throw new SyntaxError(`The "user" object is missing the "loggedIn" property`);
-                }
-                if (typeof options.user.loggedIn !== 'boolean') {
-                    throw new TypeError(`The "loggedIn" property in the "user" object expected a boolean value but instead got ${typeof options.user.loggedIn}`);
-                }
+                if (!('loggedIn' in options.user)) { throw new SyntaxError(`The "user" object is missing the "loggedIn" property`) }
+                if (typeof options.user.loggedIn !== 'boolean') { throw new TypeError(`The "loggedIn" property in the "user" object expected a boolean value but instead got ${typeof options.user.loggedIn}`) }
                 constructorOptions.user.loggedIn = options.user.loggedIn;
 
                 if (constructorOptions.user.loggedIn) {
-                    if (!('role' in options.user)) {
-                        throw new SyntaxError(`The logged-in "user" object is missing the "role" property`);
-                    }
-                    if (options.user.role === 'Visitor') {
-                        throw new SyntaxError(`The "role" property in the "user" object cannot be set to "Visitor" for logged-in users`);
-                    }
+                    if (!('role' in options.user)) { throw new SyntaxError(`The logged-in "user" object is missing the "role" property`) }
+                    if (options.user.role === 'Visitor') { throw new SyntaxError(`The "role" property in the "user" object cannot be set to "Visitor" for logged-in users`) }
                     const roles = ['Admin', 'Member'];
-                    if (!roles.includes(options.user.role)) {
-                        throw new RangeError(`The provided "user.role" (${options.user.role}) is not a valid user role`);
-                    }
+                    if (!roles.includes(options.user.role)) { throw new RangeError(`The provided "user.role" (${options.user.role}) is not a valid user role`) }
                     constructorOptions.user.role = options.user.role;
 
-                    if (!('id' in options.user)) {
-                        throw new SyntaxError(`The "user" object is missing the "id" property`);
-                    }
-                    if (typeof options.user.id !== 'string') {
-                        throw new TypeError(`The "id" property in the "user" object expected a string value but instead got ${typeof options.user.id}`);
-                    }
-                    if (options.user.id.length === 0) {
-                        throw new RangeError(`The provided "user.id" cannot be an empty string`);
-                    }
+                    if (!('id' in options.user)) { throw new SyntaxError(`The "user" object is missing the "id" property`) }
+                    if (typeof options.user.id !== 'string') { throw new TypeError(`The "id" property in the "user" object expected a string value but instead got ${typeof options.user.id}`) }
+                    if (options.user.id.length === 0) { throw new RangeError(`The provided "user.id" cannot be an empty string`) }
                     constructorOptions.user.id = options.user.id;
                 }
             }
 
             if ('defaultDatabase' in options) {
-                if (typeof options.defaultDatabase !== 'string') {
-                    throw new TypeError(`The "defaultDatabase" expected a string value but instead gpt ${typeof options.defaultDatabase}`);
-                }
-                if (options.defaultDatabase.length === 0) {
-                    throw new RangeError(`The "defaultDatabase" cannot be an empty string, it must be a database name`);
-                }
+                if (typeof options.defaultDatabase !== 'string') { throw new TypeError(`The "defaultDatabase" expected a string value but instead gpt ${typeof options.defaultDatabase}`) }
+                if (options.defaultDatabase.length === 0) { throw new RangeError(`The "defaultDatabase" cannot be an empty string, it must be a database name`) }
                 constructorOptions.defaultDatabase = options.defaultDatabase;
             }
 
