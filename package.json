@@ -2,17 +2,17 @@
   "name": "nasriya-mongodb",
   "version": "1.0.0",
   "description": "A MongoDB client with Schema & Authorization support.",
-  "main": "dist/cjs/adapter.js",
-  "module": "dist/esm/adapter.js",
-  "types": "dist/@types/adapter.d.ts",
-  "type": "module",
+  "main": "./dist/cjs/adapter.js",
+  "module": "./dist/esm/adapter.js",
+  "types": "./dist/@types/adapter.d.ts",
   "files": [
     "dist/**/*"
   ],
   "exports": {
     ".": {
       "import": "./dist/esm/adapter.js",
-      "require": "./dist/cjs/adapter.js"
+      "require": "./dist/cjs/adapter.js",
+      "types": "./dist/@types/adapter.d.ts"
     }
   },
   "scripts": {
