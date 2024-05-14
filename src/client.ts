@@ -7,29 +7,13 @@ import DataFilter from './assets/filter';
 import DataQuery from './assets/query';
 import DataAggregate from './assets/aggregate';
 import aggExps, { Expressions } from './assets/expressions';
-import uuid from 'nasriya-uuid';
-import NasriyaData from '../adapter';
+import uuidx from 'nasriya-uuidx';
+import NasriyaData from './adapter';
 
 class NasriyaDataClient {
-    private _client: MongoClient;
+    readonly #_client: MongoClient;
 
-    /**
-     * Create a new MongoDB adapter using Nasriya `NasriyaData`
-     * @param {ClientConstructorOptions} options 
-     */
-    constructor(options: ClientConstructorOptions) {
-        this._client = options.client;
-        if (options.authorization) { this._config.authorization = options.authorization }
-        if (options.defaultDatabase) { this._config.database.default = this._config.database.selected = options.defaultDatabase }
-
-        if (this._config.authorization === 'User') {
-            this._config.user.loggedIn = options?.user?.loggedIn === true ? true : false;
-            this._config.user.role = options.user?.role || 'Visitor';
-            this._config.user.id = options.user?.id || undefined;
-        }
-    }
-
-    private _config = Object.seal({
+    readonly #_config = Object.seal({
         connected: false,
         connectionString: 'mongodb://127.0.0.1:27017',
         authorization: 'User' as 'User' | 'System',
@@ -44,7 +28,23 @@ class NasriyaDataClient {
         }
     })
 
-    private _utils = Object.freeze({
+    /**
+     * Create a new MongoDB adapter using Nasriya `NasriyaData`
+     * @param {ClientConstructorOptions} options 
+     */
+    constructor(options: ClientConstructorOptions) {
+        this.#_client = options.client;
+        if (options.authorization) { this.#_config.authorization = options.authorization }
+        if (options.defaultDatabase) { this.#_config.database.default = this.#_config.database.selected = options.defaultDatabase }
+
+        if (this.#_config.authorization === 'User') {
+            this.#_config.user.loggedIn = options?.user?.loggedIn === true ? true : false;
+            this.#_config.user.role = options.user?.role || 'Visitor';
+            this.#_config.user.id = options.user?.id || undefined;
+        }
+    }
+
+    readonly #_utils = Object.freeze({
         /**
          * Check if a collection is available on a database
          * @param {string} collectionName A collection name to check for availability
@@ -52,14 +52,14 @@ class NasriyaDataClient {
          */
         checkCollectionValidity: async (collectionName: string): Promise<void> => {
             try {
-                const result = await this._client.db(this._config.database.selected).listCollections();
+                const result = await this.#_client.db(this.#_config.database.selected).listCollections();
                 const collections = await result.toArray();
 
                 const exist = collections.map(i => i.name).includes(collectionName);
                 if (exist) {
                     return Promise.resolve();
                 } else {
-                    return Promise.reject({ message: `The (${collectionName}) does not exist on your ${this._config.database} database.` })
+                    return Promise.reject({ message: `The (${collectionName}) does not exist on your ${this.#_config.database} database.` })
                 }
             } catch (error) {
                 return Promise.reject({ message: 'Unable to check collection validity', error })
@@ -76,7 +76,7 @@ class NasriyaDataClient {
                 if (permission === 'Anyone') {
                     return 'Allowed';
                 } else {
-                    const user = this._config.user;
+                    const user = this.#_config.user;
                     if (!user.loggedIn) { return 'Denied' }
 
                     if (permission === 'Admin') {
@@ -97,15 +97,15 @@ class NasriyaDataClient {
          * @returns {{permission:'Allowed' | 'Owned-Items', collection: CollectionDefinition }}
         */
         prepareEvent: (data: PrepareEventArgs): { permission: 'Allowed' | 'Owned-Items'; collection: CollectionDefinition; } => {
-            const database = databaseManager.getDatabase(this._config.database.selected);
-            if (!database) { throw `The database ${this._config.database.selected} is not a defined database` }
+            const database = databaseManager.getDatabase(this.#_config.database.selected);
+            if (!database) { throw `The database ${this.#_config.database.selected} is not a defined database` }
 
             const collection = database.collections.find(i => i.name === data.collectionName);
-            if (!collection) { throw `The collection ${data.collectionName} does not exist on the ${this._config.database.selected} database` }
+            if (!collection) { throw `The collection ${data.collectionName} does not exist on the ${this.#_config.database.selected} database` }
 
             const permission = collection.permissions?.[data.accessType] || 'Allowed' as Permission;
-            const auth = data?.options?.suppressAuth !== true ? this._utils.authUser(permission) : 'Allowed';
-            if (auth === 'Denied') { throw `Access Denied: The current user (${this._config.user.id}) does not have ${data.accessType.toUpperCase()} permissions on the ${collection.name} collection` }
+            const auth = data?.options?.suppressAuth !== true ? this.#_utils.authUser(permission) : 'Allowed';
+            if (auth === 'Denied') { throw `Access Denied: The current user (${this.#_config.user.id}) does not have ${data.accessType.toUpperCase()} permissions on the ${collection.name} collection` }
             return { permission: auth, collection }
         },
         /**
@@ -116,7 +116,7 @@ class NasriyaDataClient {
          */
         checkArgs: async (collectionName: string, argData: { type: 'String' | 'Object' | 'Array'; value: string | object | Array<any>; }, options: NasriyaDataOptions) => {
             if (typeof collectionName !== 'string') { throw new TypeError(`The collection name must only be a string, instead got ${typeof collectionName}`) }
-            await this._utils.checkCollectionValidity(collectionName);
+            await this.#_utils.checkCollectionValidity(collectionName);
 
             if (argData.type === 'String') {
                 if (typeof argData.value !== 'string') { throw new TypeError(`The itemId must be string, but instead got ${typeof argData.value}`) }
@@ -147,7 +147,7 @@ class NasriyaDataClient {
          * @param {'Insert'|'Update'} [operation]
          * @returns {Item}
          */
-        validateItemSchema: (item: object, schema?: Schema, operation?: 'Insert' | 'Update'): Item => {
+        validateItemSchema: (item: Item, schema?: Schema, operation?: 'Insert' | 'Update'): Item => {
             if (!helpers.isRealObject(item)) { throw new SyntaxError(`The schema validator expects the item to be an object, instead got ${typeof item}`) }
             /**
              * @param {string} property
@@ -247,13 +247,13 @@ class NasriyaDataClient {
         }
     })
 
-    private _helpers = Object.freeze({
+    readonly #_helpers = Object.freeze({
         validateInsertItem: (item: Item, userId?: string): CollectionItem => {
             if ('_id' in item) {
                 if (typeof item._id !== 'string') { throw new TypeError(`The item ID is expected to be a string, instead got ${typeof item._id}`) }
                 if (item._id.length === 0) { throw new RangeError(`The provided item _id cannot be an empty string`) }
             } else {
-                item._id = uuid.generate();
+                item._id = uuidx.v4();
             }
 
             // Add the dates to the item;
@@ -336,7 +336,7 @@ class NasriyaDataClient {
          */
         checkExistance: async (databaseName: string, collectionName: string, itemId: string | undefined): Promise<boolean> => {
             if (!helpers.isValidString(itemId)) { return false }
-            const item = await this._client.db(databaseName).collection(collectionName).findOne({ _id: itemId as any });
+            const item = await this.#_client.db(databaseName).collection(collectionName).findOne({ _id: itemId as any });
             return item ? true : false;
         },
         /**
@@ -358,7 +358,7 @@ class NasriyaDataClient {
                     if (typeof item._id !== 'string') { throw new TypeError(`The item you're trying to save has an invalid "_id" value. Expects a string but got ${typeof item._id}`) }
                     if (item._id.length === 0) { throw new RangeError(`The item "_id" cannot be an empty string`) }
                     toCheck.push(new Promise<void>((resolve, reject) => {
-                        this._helpers.checkExistance(databaseName, collectionName, item._id).then(exist => {
+                        this.#_helpers.checkExistance(databaseName, collectionName, item._id).then(exist => {
                             if (exist === true) { toUpdate.push(item) } else { toInsert.push(item) }
                             resolve();
                         }).catch(err => reject(err));
@@ -381,7 +381,7 @@ class NasriyaDataClient {
         }
     })
 
-    private _events = Object.freeze({
+    readonly #_events = Object.freeze({
         /**
          * @param {{hook?: AfterGetItemHook item: CollectionItem, context: HookContext}} eventArgs
          * @param {NasriyaDataOptions} options
@@ -551,7 +551,7 @@ class NasriyaDataClient {
          * @returns {Promise<Item>}
          */
         beforeInsert: async (eventArgs: { hook?: BeforeInsertHook; item: Item; context: HookContext; }, options: NasriyaDataOptions): Promise<Item> => {
-            this._helpers.validateInsertItem(eventArgs.item, eventArgs.context.userId);
+            this.#_helpers.validateInsertItem(eventArgs.item, eventArgs.context.userId);
 
             // Check the user defined hook
             const cache: { item: Item | Promise<Item> } = { item: null as unknown as Item }
@@ -563,7 +563,7 @@ class NasriyaDataClient {
                     }
 
                     if (helpers.isRealObject(cache.item)) {
-                        return this._helpers.validateInsertItem(cache.item, eventArgs.context.userId);
+                        return this.#_helpers.validateInsertItem(cache.item, eventArgs.context.userId);
                     }
                 }
             }
@@ -576,7 +576,7 @@ class NasriyaDataClient {
          */
         beforeBulkInsert: async (eventArgs: { hook?: BeforeBulkInsertHook; items: Item[]; context: HookContext; }, options: NasriyaDataOptions) => {
             for (const item of eventArgs.items) {
-                this._helpers.validateInsertItem(item, eventArgs.context.userId);
+                this.#_helpers.validateInsertItem(item, eventArgs.context.userId);
             }
 
             // Check the user defined hook
@@ -591,7 +591,7 @@ class NasriyaDataClient {
                     if (Array.isArray(cache.items)) {
                         for (const item of cache.items) {
                             if (helpers.isRealObject(item)) {
-                                this._helpers.validateInsertItem(item, eventArgs.context.userId);
+                                this.#_helpers.validateInsertItem(item, eventArgs.context.userId);
                             } else {
                                 throw new TypeError(`One or more of the items are not valid. Expected an array of objects but one of the items was ${typeof item}`)
 
@@ -650,12 +650,12 @@ class NasriyaDataClient {
             return eventArgs.itemsIds;
         },
         /**
-         * @param {{hook?: BeforeUpdateHook, item: object, context: HookContext}} eventArgs 
+         * @param {{hook?: BeforeUpdateHook, item: Record<string, any>, context: HookContext}} eventArgs 
          * @param {NasriyaDataOptions} options 
          * @returns {Promise<Item>}
          */
-        beforeUpdate: async (eventArgs: { hook?: BeforeUpdateHook; item: object; context: HookContext; }, options: NasriyaDataOptions): Promise<Item> => {
-            this._helpers.validateUpdateItem(eventArgs.item);
+        beforeUpdate: async (eventArgs: { hook?: BeforeUpdateHook; item: Record<string, any>; context: HookContext; }, options: NasriyaDataOptions): Promise<Item> => {
+            this.#_helpers.validateUpdateItem(eventArgs.item);
 
             // Check the user defined hook
             const cache: { item: Item | Promise<Item> } = { item: null as unknown as Item }
@@ -667,7 +667,7 @@ class NasriyaDataClient {
                     }
 
                     if (helpers.isRealObject(cache.item)) {
-                        return this._helpers.validateUpdateItem(cache.item);
+                        return this.#_helpers.validateUpdateItem(cache.item);
                     }
                 }
             }
@@ -681,7 +681,7 @@ class NasriyaDataClient {
          */
         beforeBulkUpdate: async (eventArgs: { hook?: BeforeBulkUpdateHook; items: Item[]; context: HookContext; }, options: NasriyaDataOptions): Promise<Item[]> => {
             for (const item of eventArgs.items) {
-                this._helpers.validateUpdateItem(item);
+                this.#_helpers.validateUpdateItem(item);
             }
 
             // Check the user defined hook
@@ -696,7 +696,7 @@ class NasriyaDataClient {
                     if (Array.isArray(cache.items)) {
                         for (const item of cache.items) {
                             if (helpers.isRealObject(item)) {
-                                this._helpers.validateUpdateItem(item);
+                                this.#_helpers.validateUpdateItem(item);
                             } else {
                                 throw new TypeError(`One or more of the items are not valid. Expected an array of objects but one of the items was ${typeof item}`)
 
@@ -747,17 +747,17 @@ class NasriyaDataClient {
      * @returns {DataAggregate}
      */
     aggregate(collectionName: string): DataAggregate {
-        const database = databaseManager.getDatabase(this._config.database.selected);
-        if (!database) { throw `The database ${this._config.database.selected} is not a defined database` }
+        const database = databaseManager.getDatabase(this.#_config.database.selected);
+        if (!database) { throw `The database ${this.#_config.database.selected} is not a defined database` }
 
         const collection = database.collections.find(i => i.name === collectionName);
         if (!collection) { throw `The collection ${collectionName} does not exist on the ${database.name} database` }
 
 
         return new DataAggregate(
-            { database, collection, authorization: this.authorization, user: this._config.user },
-            this._client,
-            this._events.onFailure
+            { database, collection, authorization: this.authorization, user: this.#_config.user },
+            this.#_client,
+            this.#_events.onFailure
         );
     }
 
@@ -767,13 +767,13 @@ class NasriyaDataClient {
      * @returns {DataQuery}
      */
     query(collectionName: string): DataQuery {
-        const database = databaseManager.getDatabase(this._config.database.selected);
-        if (!database) { throw `The database ${this._config.database.selected} is not a defined database` }
+        const database = databaseManager.getDatabase(this.#_config.database.selected);
+        if (!database) { throw `The database ${this.#_config.database.selected} is not a defined database` }
 
         const collection = database.collections.find(i => i.name === collectionName);
-        if (!collection) { throw `The collection ${collectionName} does not exist on the ${this._config.database.selected} database` }
+        if (!collection) { throw `The collection ${collectionName} does not exist on the ${this.#_config.database.selected} database` }
 
-        return new DataQuery({ database, collection, authorization: this.authorization, user: this._config.user }, this._client, this._events.onFailure);
+        return new DataQuery({ database, collection, authorization: this.authorization, user: this.#_config.user }, this.#_client, this.#_events.onFailure);
     }
 
     /**
@@ -786,28 +786,28 @@ class NasriyaDataClient {
     async getItem(collectionName: string, itemId: string, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<CollectionItem | null> {
         const accessType = 'read';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'String', value: itemId }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'String', value: itemId }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
             // Run the "Before" System Hook
-            const newItemId = await this._events.beforeGetItem({ hook: collection.hooks?.beforeGetItem, itemId, context }, options);
+            const newItemId = await this.#_events.beforeGetItem({ hook: collection.hooks?.beforeGetItem, itemId, context }, options);
 
             const criteria = { _id: newItemId as any, ...(permission === 'Owned-Items' ? { _owner: context.userId } : {}) }
-            const item = await this._client.db(this._config.database.selected).collection(collectionName).findOne(criteria);
+            const item = await this.#_client.db(this.#_config.database.selected).collection(collectionName).findOne(criteria);
             if (!item) { return null }
 
             // Run the "After" System Hook
-            const newItem = await this._events.afterGetItem({ hook: collection.hooks?.afterGetItem, item: item as unknown as CollectionItem, context }, options);
+            const newItem = await this.#_events.afterGetItem({ hook: collection.hooks?.afterGetItem, item: item as unknown as CollectionItem, context }, options);
             return newItem;
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'getItem',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -824,27 +824,27 @@ class NasriyaDataClient {
     async insert(collectionName: string, item: Item, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<CollectionItem> {
         const accessType = 'write';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
             // Run the "Before" System Hook
-            const beforeItem = await this._events.beforeInsert({ hook: collection.hooks?.beforeInsert, item, context }, options);
-            const finalItem = this._utils.validateItemSchema(beforeItem, collection.schema);
+            const beforeItem = await this.#_events.beforeInsert({ hook: collection.hooks?.beforeInsert, item, context }, options);
+            const finalItem = this.#_utils.validateItemSchema(beforeItem, collection.schema);
 
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).insertOne(finalItem as any);
-            const insertedItem = await this._client.db(this._config.database.selected).collection(collectionName).findOne({ _id: result.insertedId });
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).insertOne(finalItem as any);
+            const insertedItem = await this.#_client.db(this.#_config.database.selected).collection(collectionName).findOne({ _id: result.insertedId });
 
-            const newItem = this._events.afterInsert({ hook: collection.hooks?.afterInsert, item: insertedItem as unknown as CollectionItem, context }, options)
+            const newItem = this.#_events.afterInsert({ hook: collection.hooks?.afterInsert, item: insertedItem as unknown as CollectionItem, context }, options)
             return newItem;
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'insert',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -861,24 +861,24 @@ class NasriyaDataClient {
     async bulkInsert(collectionName: string, items: Item[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<BulkInsertResult> {
         const accessType = 'write';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
-        const { collection } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
+        const { collection } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
             // Run the "Before" System Hook
-            const beforeItems = await this._events.beforeBulkInsert({ hook: collection.hooks?.beforeBulkInsert, items, context }, options);
-            const finalItems = beforeItems.map(beforeItem => this._utils.validateItemSchema(beforeItem, collection.schema)) as Item[];
+            const beforeItems = await this.#_events.beforeBulkInsert({ hook: collection.hooks?.beforeBulkInsert, items, context }, options);
+            const finalItems = beforeItems.map(beforeItem => this.#_utils.validateItemSchema(beforeItem, collection.schema)) as Item[];
 
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).insertMany(finalItems as any);
-            const insertedItems = await this._client.db(this._config.database.selected).collection(collectionName).find({ _id: { $in: finalItems.map(i => i._id) } as unknown as ObjectId[] }).toArray();
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).insertMany(finalItems as any);
+            const insertedItems = await this.#_client.db(this.#_config.database.selected).collection(collectionName).find({ _id: { $in: finalItems.map(i => i._id) } as unknown as ObjectId[] }).toArray();
 
             const insertedIds = Object.values(result.insertedIds).map(id => id.toString());
             const skippedIds = finalItems.filter(i => typeof i?._id === 'string' && insertedIds.includes(i?._id)).map(i => i._id) as string[];
             // const skippedIds = finalItems.filter(i => typeof i?._id === 'string' && insertedIds.includes(i?._id)).map(i => i._id);
 
 
-            const newItems = await this._events.afterBulkInsert({ hook: collection.hooks?.afterBulkInsert, items: insertedItems as unknown as CollectionItem[], context }, options);
+            const newItems = await this.#_events.afterBulkInsert({ hook: collection.hooks?.afterBulkInsert, items: insertedItems as unknown as CollectionItem[], context }, options);
 
             return {
                 items: newItems,
@@ -890,12 +890,12 @@ class NasriyaDataClient {
                 }
             }
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'bulkInsert',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -912,30 +912,30 @@ class NasriyaDataClient {
     async remove(collectionName: string, itemId: string, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<string> {
         const accessType = 'delete';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'String', value: itemId }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'String', value: itemId }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
             // Run the "Before" System Hook
-            const beforeItemId = await this._events.beforeRemove({ hook: collection.hooks?.beforeRemove, itemId, context }, options);
+            const beforeItemId = await this.#_events.beforeRemove({ hook: collection.hooks?.beforeRemove, itemId, context }, options);
 
             const criteria = { _id: beforeItemId, ...(permission === 'Owned-Items' ? { _owner: context.userId } : {}) }
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).deleteOne(criteria as any);
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).deleteOne(criteria as any);
             if (!result.acknowledged) {
                 throw { message: `The data adapter is unable to remove ${beforeItemId}.` }
             }
 
             // Run the "After" System Hook
-            const afterItemId = await this._events.afterRemove({ hook: collection.hooks?.beforeRemove, itemId: beforeItemId, context }, options);
+            const afterItemId = await this.#_events.afterRemove({ hook: collection.hooks?.beforeRemove, itemId: beforeItemId, context }, options);
             return afterItemId;
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'remove',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -952,28 +952,28 @@ class NasriyaDataClient {
     async bulkRemove(collectionName: string, itemsIds: string[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<number> {
         const accessType = 'delete';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'Array', value: itemsIds }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'Array', value: itemsIds }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
             // Run the "Before" System Hook
-            const beforeIds = await this._events.beforeBulkRemove({ hook: collection.hooks?.beforeBulkRemove, itemsIds, context }, options);
+            const beforeIds = await this.#_events.beforeBulkRemove({ hook: collection.hooks?.beforeBulkRemove, itemsIds, context }, options);
 
             const criteria = { _id: { $in: beforeIds }, ...(permission === 'Owned-Items' ? { _owner: context.userId } : {}) }
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).deleteMany(criteria as any);
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).deleteMany(criteria as any);
             if (!result.acknowledged) {
                 throw { message: `The data adapter is unable to remove: ${beforeIds.join(', ')}.` }
             }
 
             return result.deletedCount;
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'bulkRemove',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -990,31 +990,31 @@ class NasriyaDataClient {
     async update(collectionName: string, item: Item, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<string> {
         const accessType = 'modify';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
             // Run the "Before" System Hook
-            const beforeItem = await this._events.beforeUpdate({ hook: collection.hooks?.beforeUpdate, item, context }, options);
-            const finalItem = this._utils.validateItemSchema(beforeItem, collection.schema, 'Update');
+            const beforeItem = await this.#_events.beforeUpdate({ hook: collection.hooks?.beforeUpdate, item, context }, options);
+            const finalItem = this.#_utils.validateItemSchema(beforeItem, collection.schema, 'Update');
 
             const criteria = { _id: finalItem._id, ...(permission === 'Owned-Items' ? { _owner: context.userId } : {}) }
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).updateOne(criteria as any, { $set: item });
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).updateOne(criteria as any, { $set: item });
             if (!result.acknowledged) {
                 throw new Error(`The data adapter is unable to update ${finalItem._id}.`)
             }
 
             // Run the "After" System Hook
-            const afterItemId = await this._events.afterUpdate({ hook: collection.hooks?.afterUpdate, itemId: finalItem._id as string, context }, options);
+            const afterItemId = await this.#_events.afterUpdate({ hook: collection.hooks?.afterUpdate, itemId: finalItem._id as string, context }, options);
             return afterItemId;
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'update',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -1031,14 +1031,14 @@ class NasriyaDataClient {
     async bulkUpdate(collectionName: string, items: Item[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<number> {
         const accessType = 'modify';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
             // Run the "Before" System Hook
-            const beforeItems = await this._events.beforeBulkUpdate({ hook: collection.hooks?.beforeBulkUpdate, items, context }, options);
-            const finalItems = beforeItems.map(beforeItem => this._utils.validateItemSchema(beforeItem, collection.schema, 'Update'));
+            const beforeItems = await this.#_events.beforeBulkUpdate({ hook: collection.hooks?.beforeBulkUpdate, items, context }, options);
+            const finalItems = beforeItems.map(beforeItem => this.#_utils.validateItemSchema(beforeItem, collection.schema, 'Update'));
 
             const operations = structuredClone(finalItems).map(item => {
                 return {
@@ -1050,7 +1050,7 @@ class NasriyaDataClient {
                 }
             })
 
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).bulkWrite(operations as any)
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).bulkWrite(operations as any)
             if (!result.isOk()) {
                 throw {
                     message: `The data adapter is unable to bulk update:\n${finalItems.map(i => i._id).join('\n')}\n.`,
@@ -1060,12 +1060,12 @@ class NasriyaDataClient {
 
             return result.modifiedCount;
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'bulkUpdate',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -1098,18 +1098,18 @@ class NasriyaDataClient {
     async save(collectionName: string, item: Item, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<SaveResult> {
         const accessType = 'modify';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
-            const exist = await this._helpers.checkExistance(this._config.database.selected, collectionName, item?._id);
-            const writePermission = options?.suppressAuth === true ? 'Allowed' : exist === true ? null : this._utils.authUser(collection.permissions?.write);
+            const exist = await this.#_helpers.checkExistance(this.#_config.database.selected, collectionName, item?._id);
+            const writePermission = options?.suppressAuth === true ? 'Allowed' : exist === true ? null : this.#_utils.authUser(collection.permissions?.write);
             if (writePermission === 'Denied') { throw `Access Denied: The current user (${context.userId}) does not have ${'write'.toUpperCase()} permissions on the ${collection.name} collection` }
 
             // Run the "Before" System Hook
-            const beforeItem = exist ? this._helpers.validateUpdateItem(item) : this._helpers.validateInsertItem(item, context.userId);
-            this._utils.validateItemSchema(beforeItem, collection.schema, exist ? 'Update' : 'Insert');
+            const beforeItem = exist ? this.#_helpers.validateUpdateItem(item) : this.#_helpers.validateInsertItem(item, context.userId);
+            this.#_utils.validateItemSchema(beforeItem, collection.schema, exist ? 'Update' : 'Insert');
 
             const criteria = { _id: beforeItem._id } as any
             if (exist) {
@@ -1118,7 +1118,7 @@ class NasriyaDataClient {
                 if (writePermission === 'Owned-Items') { criteria._owner = context.userId }
             }
 
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).updateOne(criteria, { $set: beforeItem }, { upsert: exist ? false : true });
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).updateOne(criteria, { $set: beforeItem }, { upsert: exist ? false : true });
             if (!result.acknowledged) {
                 throw new Error(`The data adapter is unable to save ${exist ? beforeItem._id : 'new item'}.`)
             }
@@ -1128,12 +1128,12 @@ class NasriyaDataClient {
                 id: exist ? beforeItem._id as any : result.upsertedId?.toString()
             }
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'save',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -1170,24 +1170,24 @@ class NasriyaDataClient {
     async bulkSave(collectionName: string, items: Item[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<BulkSaveResult> {
         const accessType = 'modify';
         // Run prechecks
-        await this._utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
-        const { collection, permission } = this._utils.prepareEvent({ collectionName: collectionName, accessType, options })
-        const context = { collectionName: collection.name, userId: this._config.user.id, userRole: this._config.user.role }
+        await this.#_utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
+        const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
+        const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
-            const { toUpdate, toInsert } = await this._helpers.checkItemsExistance(this._config.database.selected, collectionName, items);
-            const writePermission = options?.suppressAuth === true ? 'Allowed' : toInsert.length > 0 ? this._utils.authUser(collection.permissions?.write) : null;
+            const { toUpdate, toInsert } = await this.#_helpers.checkItemsExistance(this.#_config.database.selected, collectionName, items);
+            const writePermission = options?.suppressAuth === true ? 'Allowed' : toInsert.length > 0 ? this.#_utils.authUser(collection.permissions?.write) : null;
             if (writePermission === 'Denied') { throw `Access Denied: The current user (${context.userId}) does not have ${'write'.toUpperCase()} permissions on the ${collection.name} collection` }
 
             // Validating items' default properties
             const [beforeUpdate, beforeInsert] = await Promise.all([
-                toUpdate.map(updateItem => this._helpers.validateUpdateItem(updateItem)),
-                toInsert.map(insertItem => this._helpers.validateInsertItem(insertItem, context.userId))
+                toUpdate.map(updateItem => this.#_helpers.validateUpdateItem(updateItem)),
+                toInsert.map(insertItem => this.#_helpers.validateInsertItem(insertItem, context.userId))
             ])
 
             // Validating items against the collection schema
-            beforeUpdate.map(item => this._utils.validateItemSchema(item, collection.schema, 'Update'));
-            beforeInsert.map(item => this._utils.validateItemSchema(item, collection.schema, 'Insert'));
+            beforeUpdate.map(item => this.#_utils.validateItemSchema(item, collection.schema, 'Update'));
+            beforeInsert.map(item => this.#_utils.validateItemSchema(item, collection.schema, 'Insert'));
 
             // Construct the update operations
             const updateOps = structuredClone(beforeUpdate).map(item => {
@@ -1209,7 +1209,7 @@ class NasriyaDataClient {
                 }
             })
 
-            const result = await this._client.db(this._config.database.selected).collection(collectionName).bulkWrite([...updateOps, ...insertOps] as any)
+            const result = await this.#_client.db(this.#_config.database.selected).collection(collectionName).bulkWrite([...updateOps, ...insertOps] as any)
 
             let operation: 'Mixed' | 'Update' | 'Insert';
             if (updateOps.length > 0 && insertOps.length > 0) {
@@ -1230,12 +1230,12 @@ class NasriyaDataClient {
                 updated: beforeUpdate.map(i => i._id) as string[]
             }
         } catch (error) {
-            this._events.onFailure({
+            this.#_events.onFailure({
                 hook: collection.hooks?.onFailure,
                 options,
                 dataOperation: 'bulkSave',
                 context,
-                error: error
+                error: error as Error
             });
 
             throw Error();
@@ -1246,13 +1246,13 @@ class NasriyaDataClient {
      * Get the `MongoDB` client for custom operations 
      * @returns {MongoClient}
      */
-    get MongoClient(): MongoClient { return this._client }
+    get MongoClient(): MongoClient { return this.#_client }
 
     /**
      * Get the client authorization
      * @returns {'User'|'System'}
      */
-    get authorization(): 'User' | 'System' { return this._config.authorization }
+    get authorization(): 'User' | 'System' { return this.#_config.authorization }
 
     /**
      * Get a list the databases by {@link NasriyaData.defineDatabase}
@@ -1270,13 +1270,13 @@ class NasriyaDataClient {
      */
     db(name: string): NasriyaDataClient {
         if (name === null || name === undefined) {
-            this._config.database.selected = this._config.database.default;
+            this.#_config.database.selected = this.#_config.database.default;
             return this;
         }
 
         const database = databaseManager.getDatabase(name, { caseSensitivity: 'ignore' });
         if (!database) { throw `The database ${name} that you selected is not defined in the NasriyaData` }
-        this._config.database.selected = database.name;
+        this.#_config.database.selected = database.name;
         return this;
     }
 }

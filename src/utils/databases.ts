@@ -1,7 +1,7 @@
 import type { DatabaseDefinition } from '../docs/docs';
 
 class DatabaseManager {
-    private databases: DatabaseDefinition[] = [];
+    readonly #_databases: DatabaseDefinition[] = [];
 
     /**
      * Add a new database
@@ -9,8 +9,8 @@ class DatabaseManager {
      * @returns {DatabaseDefinition[]} The updated list
      */
     add(database: DatabaseDefinition): DatabaseDefinition[] {
-        this.databases.push(database);
-        return this.databases;
+        this.#_databases.push(database);
+        return this.#_databases;
     }
 
     /**
@@ -20,14 +20,14 @@ class DatabaseManager {
      * @returns {DatabaseDefinition|null} `DatabaseDefinition` or `null` if the database name didn't match any of the defined databases
      */
     getDatabase(name: string, options?: { caseSensitivity: 'ignore' }): DatabaseDefinition | null {
-        return this.databases.find(i => options?.caseSensitivity === 'ignore' ? i.name.toLowerCase() === name.toLowerCase() : i.name === name) || null;
+        return this.#_databases.find(i => options?.caseSensitivity === 'ignore' ? i.name.toLowerCase() === name.toLowerCase() : i.name === name) || null;
     }
 
     /**
      * List all saved databases
      * @returns {DatabaseDefinition[]}
      */
-    get list(): DatabaseDefinition[] { return this.databases }
+    get list(): DatabaseDefinition[] { return this.#_databases }
 }
 
 export default new DatabaseManager;

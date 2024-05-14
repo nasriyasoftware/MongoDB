@@ -12,10 +12,10 @@ import type { CollectionItem } from '../docs/docs';
  * - It's safe to return the {@link data} object to the frontend
  */
 class QueryResult {
-    private _cursor: mongodb.FindCursor;
-    private _totalPages = 1;
+    readonly #_cursor: mongodb.FindCursor;
+    #_totalPages = 1;
 
-    private _results = Object.seal({
+    readonly #_results = Object.seal({
         /**The total number of pages for this query */
         totalCount: 0,
         /**The length of the current page */
@@ -34,33 +34,33 @@ class QueryResult {
         pageItems: [] as CollectionItem[]
     })
 
-    private _config = Object.seal({
+    readonly #_config = Object.seal({
         page: { size: 100, num: 1 }
     })
 
     constructor(config: { totalCount: number, pages: number, pageSize: number, items: CollectionItem[], cursor: mongodb.FindCursor }) {
-        this._results.totalCount = config.totalCount;
-        this._results.items = this._results.pageItems = config.items;
-        this._results.length = config.items.length;
-        this._totalPages = config.pages;
-        this._cursor = config.cursor;
-        this._config.page.size = config.pageSize;
+        this.#_results.totalCount = config.totalCount;
+        this.#_results.items = this.#_results.pageItems = config.items;
+        this.#_results.length = config.items.length;
+        this.#_totalPages = config.pages;
+        this.#_cursor = config.cursor;
+        this.#_config.page.size = config.pageSize;
     }
 
     /**The current page */
-    get currentPage() { return this._config.page.num }
+    get currentPage() { return this.#_config.page.num }
 
     /**The total number of pages for this query */
-    get totalPages() { return this._totalPages }
+    get totalPages() { return this.#_totalPages }
 
     /**The total number of items that match the query filter */
-    get totalCount() { return this._results.totalCount }
+    get totalCount() { return this.#_results.totalCount }
 
     /**The length of the current page */
-    get length() { return this._results.length }
+    get length() { return this.#_results.length }
 
     /**The matching items of the current page */
-    get pageItems() { return this._results.pageItems }
+    get pageItems() { return this.#_results.pageItems }
 
     /**
      * All the matching items that has been retrieved from the
@@ -69,21 +69,21 @@ class QueryResult {
      * When you call `next()`, the retrieved items will be added to
      * the items here.
      */
-    get items() { return this._results.items }
+    get items() { return this.#_results.items }
 
     /**Check whether there are next pages or not */
-    hasNext() { return this._config.page.num < this._totalPages }
+    hasNext() { return this.#_config.page.num < this.#_totalPages }
 
     /**Retrieve the next page of items */
     async next(): Promise<CollectionItem[]> {
         try {
             if (!this.hasNext()) { return [] }
-            const items = await this._cursor.next();
-            this._results.pageItems = items;
+            const items = await this.#_cursor.next();
+            this.#_results.pageItems = items;
 
             if (items.length > 0) {
-                this._config.page.num++;
-                this._results.items = [...this._results.items, ...items];
+                this.#_config.page.num++;
+                this.#_results.items = [...this.#_results.items, ...items];
             }
 
             return items;
@@ -103,7 +103,7 @@ class QueryResult {
     }
 
     /**A result object. You can safely return this to the frontend if you want */
-    get data() { return this._results }
+    get data() { return this.#_results }
 }
 
 export default QueryResult;

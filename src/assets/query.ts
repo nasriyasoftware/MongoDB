@@ -5,9 +5,9 @@ import helpers from '../utils/helpers';
 import DataFilter from './filter';
 
 class DataQuery {
-    private _client: mongodb.MongoClient;
+    readonly #_client: mongodb.MongoClient;
 
-    private _data = Object.seal({
+    readonly #_data = Object.seal({
         database: null as unknown as DatabaseDefinition,
         collection: null as unknown as CollectionDefinition,
         user: null as unknown as ClientUser,
@@ -23,25 +23,25 @@ class DataQuery {
      * @param {OnFailureEvent} onFailureEvent
      */
     constructor({ database, collection, authorization, user }: { database: DatabaseDefinition, collection: CollectionDefinition, authorization: 'System' | 'User', user: ClientUser }, client: mongodb.MongoClient, onFailureEvent: OnFailureEvent) {
-        this._client = client;
-        this._data.database = database;
-        this._data.collection = collection;
-        this._data.authorization = authorization;
-        this._data.user = user;
-        this._data.onFailure = onFailureEvent;
+        this.#_client = client;
+        this.#_data.database = database;
+        this.#_data.collection = collection;
+        this.#_data.authorization = authorization;
+        this.#_data.user = user;
+        this.#_data.onFailure = onFailureEvent;
     }
 
-    private _utils = Object.freeze({
+    readonly #_utils = Object.freeze({
         /**
          * @param {NasriyaDataOptions} [options]
          * @returns {Promise<'Allowed'|'Owned-Items'>} The access authorization
          */
         prepareEvent: async (options?: NasriyaDataOptions): Promise<'Allowed' | 'Owned-Items'> => {
-            await this._utils.checkCollectionValidity(this._data.collection.name);
+            await this.#_utils.checkCollectionValidity(this.#_data.collection.name);
 
-            const readAccess = this._data.collection.permissions?.read;
-            const permission = options?.suppressAuth !== true ? this._utils.authUser(readAccess) : 'Allowed';
-            if (permission === 'Denied') { throw `Access Denied: The current user (${this._data.user.id}) does not have ${'read'.toUpperCase()} permissions on the ${this._data.collection.name} collection` }
+            const readAccess = this.#_data.collection.permissions?.read;
+            const permission = options?.suppressAuth !== true ? this.#_utils.authUser(readAccess) : 'Allowed';
+            if (permission === 'Denied') { throw `Access Denied: The current user (${this.#_data.user.id}) does not have ${'read'.toUpperCase()} permissions on the ${this.#_data.collection.name} collection` }
 
             return permission;
         },
@@ -52,11 +52,11 @@ class DataQuery {
         authUser: (permission?: Permission): 'Allowed' | 'Denied' | 'Owned-Items' => {
             if (typeof permission === 'undefined') { return 'Allowed' }
 
-            if (this._data.authorization === 'User') {
+            if (this.#_data.authorization === 'User') {
                 if (permission === 'Anyone') {
                     return 'Allowed';
                 } else {
-                    const user = this._data.user;
+                    const user = this.#_data.user;
                     if (!user.loggedIn) { return 'Denied' }
 
                     if (permission === 'Admin') {
@@ -79,14 +79,14 @@ class DataQuery {
          */
         checkCollectionValidity: async (collection_id: string): Promise<void> => {
             try {
-                const result = await this._client.db(this._data.database.name).listCollections();
+                const result = await this.#_client.db(this.#_data.database.name).listCollections();
                 const collections = await result.toArray();
 
                 const exist = collections.map(i => i.name).includes(collection_id);
                 if (exist) {
                     return Promise.resolve();
                 } else {
-                    return Promise.reject({ message: `The (${collection_id}) does not exist on your ${this._data.database.name} database.` })
+                    return Promise.reject({ message: `The (${collection_id}) does not exist on your ${this.#_data.database.name} database.` })
                 }
             } catch (error) {
                 return Promise.reject({ message: 'Unable to check collection validity', error })
@@ -94,7 +94,7 @@ class DataQuery {
         }
     })
 
-    private _config = Object.seal({
+    readonly #_config = Object.seal({
         filter: null as unknown as Record<string, any>,
         /**@type {Object<string, 1|-1>} */
         sort: {} as Record<string, 1 | -1>,
@@ -111,7 +111,7 @@ class DataQuery {
      */
     filter(filter: DataFilter): DataQuery {
         if (!(filter instanceof DataFilter)) { throw new TypeError(`The query filter method only accepts an instance of DataFilter. Use the client to create one`) }
-        this._config.filter = filter._filter;
+        this.#_config.filter = filter._filter;
         return this;
     }
 
@@ -125,7 +125,7 @@ class DataQuery {
         if (typeof number !== 'number') { throw new TypeError(`The query skip method only accepts numbers, but instead got ${typeof number}`) }
         if (number < 0) { throw new RangeError(`The query skip method only accepts numbers greater than zero (0)`) }
 
-        this._config.skip = number;
+        this.#_config.skip = number;
         return this;
     }
 
@@ -139,7 +139,7 @@ class DataQuery {
         if (limit < 1) { throw `The query limit cannot be less than one item` }
         if (limit > 2000) { throw `The query limit cannot exceed 2000 items` }
 
-        this._config.limit = limit;
+        this.#_config.limit = limit;
         return this;
     }
 
@@ -154,7 +154,7 @@ class DataQuery {
      */
     ascending(property: string): DataQuery {
         if (typeof property === 'string' && property.length > 0) {
-            this._config.sort[property] = 1;
+            this.#_config.sort[property] = 1;
         } else {
             throw `The "ascending" sorting method is either missing a valid property or is missing the property.`
         }
@@ -173,7 +173,7 @@ class DataQuery {
      */
     descending(property: string): DataQuery {
         if (typeof property === 'string' && property.length > 0) {
-            this._config.sort[property] = -1;
+            this.#_config.sort[property] = -1;
         } else {
             throw `The "descending" sorting method is either missing a valid property or is missing the property.`
         }
@@ -206,7 +206,7 @@ class DataQuery {
             }
         }
 
-        this._config.projection = projection;
+        this.#_config.projection = projection;
         return this;
     }
 
@@ -216,35 +216,35 @@ class DataQuery {
      * @returns {Promise<QueryResult>}
      */
     async find(options?: NasriyaDataOptions): Promise<QueryResult> {
-        const context = { collectionName: this._data.collection.name, userId: this._data.user.id, userRole: this._data.user.role }
+        const context = { collectionName: this.#_data.collection.name, userId: this.#_data.user.id, userRole: this.#_data.user.role }
 
         try {
-            if (!this._config.filter) { this._config.filter = {} }
-            const permission = await this._utils.prepareEvent(options);
-            const filter = options?.suppressAuth === true ? this._config.filter : permission === 'Owned-Items' ? { _owner: context.userId, ...this._config.filter } : this._config.filter;
+            if (!this.#_config.filter) { this.#_config.filter = {} }
+            const permission = await this.#_utils.prepareEvent(options);
+            const filter = options?.suppressAuth === true ? this.#_config.filter : permission === 'Owned-Items' ? { _owner: context.userId, ...this.#_config.filter } : this.#_config.filter;
 
             const cursorOptions = {
-                sort: this._config.sort ? this._config.sort : undefined,
-                projection: this._config.projection ? this._config.projection : undefined,
-                limit: this._config.limit,
-                skip: this._config.skip
+                sort: this.#_config.sort ? this.#_config.sort : undefined,
+                projection: this.#_config.projection ? this.#_config.projection : undefined,
+                limit: this.#_config.limit,
+                skip: this.#_config.skip
             }
 
-            const collection = this._client.db(this._data.database.name).collection(this._data.collection.name);
+            const collection = this.#_client.db(this.#_data.database.name).collection(this.#_data.collection.name);
             const cursor = collection.find(filter, cursorOptions);
 
             const [totalCount, items] = await Promise.all([collection.countDocuments(filter), cursor.toArray()]);
-            const totalPages = Math.ceil(totalCount / this._config.limit);
+            const totalPages = Math.ceil(totalCount / this.#_config.limit);
 
-            const results = new QueryResult({ totalCount, pages: totalPages, pageSize: this._config.limit, items: items as unknown as CollectionItem[], cursor });
+            const results = new QueryResult({ totalCount, pages: totalPages, pageSize: this.#_config.limit, items: items as unknown as CollectionItem[], cursor });
             return results;
         } catch (error) {
-            this._data.onFailure({
-                hook: this._data.collection.hooks?.onFailure,
+            this.#_data.onFailure({
+                hook: this.#_data.collection.hooks?.onFailure,
                 options,
                 dataOperation: 'query',
                 context,
-                error: error
+                error: error as Error
             })
 
             throw Error; // Just for TS
@@ -257,23 +257,23 @@ class DataQuery {
      * @returns {Promise<number>} The total number of items that match the filter of this query
      */
     async count(options?: NasriyaDataOptions): Promise<number> {
-        const context = { collectionName: this._data.collection.name, userId: this._data.user.id, userRole: this._data.user.role }
+        const context = { collectionName: this.#_data.collection.name, userId: this.#_data.user.id, userRole: this.#_data.user.role }
 
         try {
-            const permission = await this._utils.prepareEvent(options);
-            const filter = options?.suppressAuth === true ? this._config.filter : permission === 'Owned-Items' ? { _owner: context.userId, ...this._config.filter } : this._config.filter;
+            const permission = await this.#_utils.prepareEvent(options);
+            const filter = options?.suppressAuth === true ? this.#_config.filter : permission === 'Owned-Items' ? { _owner: context.userId, ...this.#_config.filter } : this.#_config.filter;
 
-            const collection = this._client.db(this._data.database.name).collection(this._data.collection.name);
+            const collection = this.#_client.db(this.#_data.database.name).collection(this.#_data.collection.name);
             const totalCount = await collection.countDocuments(filter);
 
             return totalCount;
         } catch (error) {
-            this._data.onFailure({
-                hook: this._data.collection.hooks?.onFailure,
+            this.#_data.onFailure({
+                hook: this.#_data.collection.hooks?.onFailure,
                 options,
                 dataOperation: 'count',
                 context,
-                error: error
+                error: error as Error
             })
 
             throw Error; // Just for TS

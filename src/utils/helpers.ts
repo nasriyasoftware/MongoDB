@@ -1,7 +1,7 @@
 import { CustomSchema, SchemaType } from "../docs/docs";
 
 class Helpers {
-    private readonly _constants = {
+    readonly #_constants = {
         schemaTypes: ['String', 'Number', 'Object', 'Array', 'Date', 'Boolean'] as SchemaType[],
     };
 
@@ -46,7 +46,7 @@ class Helpers {
 
     isSchemaType(schemaType: any): schemaType is SchemaType {
         if (typeof schemaType === 'string') {
-            return [...this._constants.schemaTypes, 'Any'].includes(schemaType);
+            return [...this.#_constants.schemaTypes, 'Any'].includes(schemaType);
         } else {
             return false
         }

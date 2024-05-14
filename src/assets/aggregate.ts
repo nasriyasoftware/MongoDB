@@ -4,9 +4,9 @@ import helpers from '../utils/helpers';
 import DataFilter from './filter';
 
 class DataAggregate {
-    private _client: mongodb.MongoClient;
+    readonly #_client: mongodb.MongoClient;
 
-    private _data = Object.seal({
+    readonly #_data = Object.seal({
         database: null as unknown as DatabaseDefinition,
         collection: null as unknown as CollectionDefinition,
         user: null as unknown as ClientUser,
@@ -22,25 +22,25 @@ class DataAggregate {
      * @param {OnFailureEvent} onFailureEvent
      */
     constructor({ database, collection, authorization, user }: { database: DatabaseDefinition, collection: CollectionDefinition, authorization: 'System' | 'User', user: ClientUser }, client: mongodb.MongoClient, onFailureEvent: OnFailureEvent) {
-        this._client = client;
-        this._data.database = database;
-        this._data.collection = collection;
-        this._data.authorization = authorization;
-        this._data.user = user;
-        this._data.onFailure = onFailureEvent;
+        this.#_client = client;
+        this.#_data.database = database;
+        this.#_data.collection = collection;
+        this.#_data.authorization = authorization;
+        this.#_data.user = user;
+        this.#_data.onFailure = onFailureEvent;
     }
 
-    private _utils = Object.freeze({
+    readonly #_utils = Object.freeze({
         /**
          * @param {NasriyaDataOptions} [options]
          * @returns {Promise<'Allowed'|'Owned-Items'>} The access authorization
          */
         prepareEvent: async (options?: NasriyaDataOptions): Promise<'Allowed' | 'Owned-Items'> => {
-            await this._utils.checkCollectionValidity(this._data.collection!.name);
+            await this.#_utils.checkCollectionValidity(this.#_data.collection!.name);
 
-            const readAccess = this._data.collection!.permissions?.read;
-            const permission = options?.suppressAuth !== true ? this._utils.authUser(readAccess) : 'Allowed';
-            if (permission === 'Denied') { throw `Access Denied: The current user (${this._data.user!.id}) does not have ${'read'.toUpperCase()} permissions on the ${this._data.collection!.name} collection` }
+            const readAccess = this.#_data.collection!.permissions?.read;
+            const permission = options?.suppressAuth !== true ? this.#_utils.authUser(readAccess) : 'Allowed';
+            if (permission === 'Denied') { throw `Access Denied: The current user (${this.#_data.user!.id}) does not have ${'read'.toUpperCase()} permissions on the ${this.#_data.collection!.name} collection` }
 
             return permission;
         },
@@ -51,11 +51,11 @@ class DataAggregate {
         authUser: (permission?: Permission): 'Allowed' | 'Denied' | 'Owned-Items' => {
             if (typeof permission === 'undefined') { return 'Allowed' }
 
-            if (this._data.authorization === 'User') {
+            if (this.#_data.authorization === 'User') {
                 if (permission === 'Anyone') {
                     return 'Allowed';
                 } else {
-                    const user = this._data.user!;
+                    const user = this.#_data.user!;
                     if (!user.loggedIn) { return 'Denied' }
 
                     if (permission === 'Admin') {
@@ -78,14 +78,14 @@ class DataAggregate {
          */
         checkCollectionValidity: async (collection_id: string): Promise<void> => {
             try {
-                const result = await this._client.db(this._data.database!.name).listCollections();
+                const result = await this.#_client.db(this.#_data.database!.name).listCollections();
                 const collections = await result.toArray();
 
                 const exist = collections.map(i => i.name).includes(collection_id);
                 if (exist) {
                     return Promise.resolve();
                 } else {
-                    return Promise.reject({ message: `The (${collection_id}) does not exist on your ${this._data.database!.name} database.` })
+                    return Promise.reject({ message: `The (${collection_id}) does not exist on your ${this.#_data.database!.name} database.` })
                 }
             } catch (error) {
                 return Promise.reject({ message: 'Unable to check collection validity', error })
@@ -98,7 +98,7 @@ class DataAggregate {
         }
     })
 
-    private _stages: any[] = [];
+    readonly #_stages: any[] = [];
 
     /**
      * Filters out items from being used in an aggregation.
@@ -107,7 +107,7 @@ class DataAggregate {
      */
     filter(filter: DataFilter): DataAggregate {
         if (!(filter instanceof DataFilter)) { throw new TypeError(`The query filter method only accepts an instance of DataFilter. Use the client to create one`) }
-        this._stages.push({ $match: filter._filter })
+        this.#_stages.push({ $match: filter._filter })
         return this;
     }
 
@@ -121,7 +121,7 @@ class DataAggregate {
         if (typeof number !== 'number') { throw new TypeError(`The query skip method only accepts numbers, but instead got ${typeof number}`) }
         if (number < 0) { throw new RangeError(`The query skip method only accepts numbers greater than zero (0)`) }
 
-        this._stages.push({ $skip: number });
+        this.#_stages.push({ $skip: number });
         return this;
     }
 
@@ -135,7 +135,7 @@ class DataAggregate {
         if (limit < 1) { throw `The query limit cannot be less than one item` }
         if (limit > 2000) { throw `The query limit cannot exceed 2000 items` }
 
-        this._stages.push({ $limit: limit });
+        this.#_stages.push({ $limit: limit });
         return this;
     }
 
@@ -150,7 +150,7 @@ class DataAggregate {
      */
     ascending(property: string): DataAggregate {
         if (typeof property === 'string' && property.length > 0) {
-            this._stages.push({ $sort: { [property]: 1 } });
+            this.#_stages.push({ $sort: { [property]: 1 } });
         } else {
             throw `The "ascending" sorting method is either missing a valid property or is missing the property.`
         }
@@ -169,7 +169,7 @@ class DataAggregate {
      */
     descending(property: string): DataAggregate {
         if (typeof property === 'string' && property.length > 0) {
-            this._stages.push({ $sort: { [property]: -1 } });
+            this.#_stages.push({ $sort: { [property]: -1 } });
         } else {
             throw `The "descending" sorting method is either missing a valid property or is missing the property.`
         }
@@ -202,7 +202,7 @@ class DataAggregate {
             }
         }
 
-        this._stages.push({ $project: projection });
+        this.#_stages.push({ $project: projection });
         return this;
     }
 
@@ -217,7 +217,7 @@ class DataAggregate {
      */
     group(grouping: Grouping): DataAggregate {
         if (!helpers.isRealObject(grouping)) { throw new TypeError(`The group method expects a grouping object.`) }
-        this._stages.push({ $group: grouping });
+        this.#_stages.push({ $group: grouping });
         return this;
     }
 
@@ -236,7 +236,7 @@ class DataAggregate {
      */
     facet(facets: object): DataAggregate {
         if (!helpers.isRealObject(facets)) { throw new TypeError(`The facet method expects an object but got ${typeof facets}`) }
-        this._stages.push({ $facet: facets });
+        this.#_stages.push({ $facet: facets });
         return this;
     }
 
@@ -251,7 +251,7 @@ class DataAggregate {
     */
     customStage(stage: object): DataAggregate {
         if (!helpers.isRealObject(stage)) { throw new TypeError(`The customStage method expects an object but got ${typeof stage}.`) }
-        this._stages.push(stage);
+        this.#_stages.push(stage);
         return this;
     }
 
@@ -271,7 +271,7 @@ class DataAggregate {
      * client.aggregate('Products').geoNear(geoNearOptions).execute();
      */
     geoNear(geoNearOptions: object): DataAggregate {
-        this._stages.push({ $geoNear: geoNearOptions });
+        this.#_stages.push({ $geoNear: geoNearOptions });
         return this;
     }
 
@@ -291,7 +291,7 @@ class DataAggregate {
      * client.aggregate('Products').geoWithin(geoWithinOptions).execute();
      */
     geoWithin(geoWithinOptions: object): DataAggregate {
-        this._stages.push({ $geoWithin: geoWithinOptions });
+        this.#_stages.push({ $geoWithin: geoWithinOptions });
         return this;
     }
 
@@ -311,7 +311,7 @@ class DataAggregate {
      * client.aggregate('Products').geoIntersects(geoIntersectsOptions).execute();
      */
     geoIntersects(geoIntersectsOptions: object): DataAggregate {
-        this._stages.push({ $geoIntersects: geoIntersectsOptions });
+        this.#_stages.push({ $geoIntersects: geoIntersectsOptions });
         return this;
     }
 
@@ -332,28 +332,28 @@ class DataAggregate {
      * const result = await dataAggregate.execute(options);
      */
     async execute(options?: NasriyaDataOptions): Promise<any[]> {
-        const context = { collectionName: this._data.collection!.name, userId: this._data.user!.id, userRole: this._data.user!.role }
+        const context = { collectionName: this.#_data.collection!.name, userId: this.#_data.user!.id, userRole: this.#_data.user!.role }
 
         try {
-            const permission = await this._utils.prepareEvent(options);
+            const permission = await this.#_utils.prepareEvent(options);
             if (options?.suppressAuth !== true && permission === 'Owned-Items') {
-                this._stages.unshift({ $match: { _owner: context.userId } })
+                this.#_stages.unshift({ $match: { _owner: context.userId } })
             }
 
             // Execute the aggregation pipeline
-            const collection = this._client.db(this._data.database!.name).collection(this._data.collection!.name);
-            const result = collection.aggregate(this._stages);
+            const collection = this.#_client.db(this.#_data.database!.name).collection(this.#_data.collection!.name);
+            const result = collection.aggregate(this.#_stages);
 
             // Process and return the result            
             return result.toArray();
         } catch (error) {
             // Handle errors
-            this._data.onFailure({
-                hook: this._data.collection!.hooks?.onFailure,
+            this.#_data.onFailure({
+                hook: this.#_data.collection!.hooks?.onFailure,
                 options,
                 dataOperation: 'aggregate',
                 context,
-                error: error
+                error: error as Error
             })
             
             throw Error; // Just for TS

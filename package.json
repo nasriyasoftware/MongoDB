@@ -1,10 +1,25 @@
 {
   "name": "nasriya-mongodb",
   "version": "1.0.0",
-  "description": "A lightweight package to generate v5 UUID on the go.",
-  "main": "adapter.ts",
+  "description": "A MongoDB client with Schema & Authorization support.",
+  "main": "dist/cjs/adapter.js",
+  "module": "dist/esm/adapter.js",
+  "types": "dist/@types/adapter.d.ts",
+  "type": "module",
+  "files": [
+    "dist/**/*"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/esm/adapter.js",
+      "require": "./dist/cjs/adapter.js"
+    }
+  },
   "scripts": {
-    "test": "main.ts"
+    "build": "npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -14,6 +29,6 @@
   "license": "ISC",
   "dependencies": {
     "mongodb": "^6.5.0",
-    "nasriya-uuid": "github:nasriyasoftware/uuid"
+    "nasriya-uuidx": "github:nasriyasoftware/uuidx"
   }
 }

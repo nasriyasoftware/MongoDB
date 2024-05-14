@@ -2,9 +2,9 @@ import type { DataBSONType } from '../docs/docs';
 
 class DataFilter {
     /** The query filter object */
-    private queryObject: Record<string, any> = {}
+    readonly #_queryObject: Record<string, any> = {}
 
-    private _utils = Object.freeze({
+    readonly #_utils = Object.freeze({
         /** @param {string} prop */
         checkProperty: (prop: string) => {
             if (typeof prop !== 'string') { throw `The used property (${prop}) is not a valid string` }
@@ -26,7 +26,7 @@ class DataFilter {
         bson: {
             types: ['number', 'string', 'bool', 'object', 'array', 'object', 'date', 'javascript', 'null'],
             /** @param {string} type */
-            isSupportedType: (type: string) => this._utils.bson.types.includes(type)
+            isSupportedType: (type: string) => this.#_utils.bson.types.includes(type)
         }
     })
 
@@ -41,7 +41,7 @@ class DataFilter {
      * @returns {DataFilter}
      */
     between(property: string, start: (string | number | Date)[], end: (string | number | Date)[]): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
         // Checking types
         const startType = start instanceof Date ? 'date' : typeof start;
@@ -53,7 +53,7 @@ class DataFilter {
         if (start > end) { throw new RangeError(`Unable to use the "between" filter on the "${property}" property. The start value (${startType === 'date' ? start.toString() : start}) cannot be greator than the end value (${endType === 'date' ? end.toString() : end})`) }
 
         // Setting the filter
-        this.queryObject[property] = { $gte: start, $lte: end }
+        this.#_queryObject[property] = { $gte: start, $lte: end }
         return this;
     }
 
@@ -64,10 +64,10 @@ class DataFilter {
      * @returns {DataFilter}
      */
     hasAll(property: string, value: (string | number | Date | any)[]): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
         if (!Array.isArray(value)) { throw `Unable to use the "hasAll" filter on the "${property}" property. The passed value is invalid. Expected an array as a value but instead got ${typeof value}.` }
 
-        this.queryObject[property] = { $all: value }
+        this.#_queryObject[property] = { $all: value }
         return this;
     }
 
@@ -78,10 +78,10 @@ class DataFilter {
      * @returns {DataFilter}
      */
     hasSome(property: string, value: (string | number | Date | any)[]): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
         if (!Array.isArray(value)) { throw `Unable to use the "hasSome" filter on the "${property}" property. The passed value is invalid. Expected an array as a value but instead got ${typeof value}.` }
 
-        this.queryObject[property] = { $in: value }
+        this.#_queryObject[property] = { $in: value }
         return this;
     }
 
@@ -93,8 +93,8 @@ class DataFilter {
      * @returns {DataFilter}
      */
     startsWith(property: string, value: string, options?: { caseSensitive: boolean }): DataFilter {
-        this._utils.checkProperty(property);
-        this.queryObject[property] = new RegExp(`^${value}`, options?.caseSensitive === true ? '' : 'i');
+        this.#_utils.checkProperty(property);
+        this.#_queryObject[property] = new RegExp(`^${value}`, options?.caseSensitive === true ? '' : 'i');
         return this;
     }
 
@@ -106,8 +106,8 @@ class DataFilter {
      * @returns {DataFilter}
      */
     endsWith(property: string, value: string, options?: { caseSensitive: boolean }): DataFilter {
-        this._utils.checkProperty(property);
-        this.queryObject[property] = new RegExp(`${value}$`, options?.caseSensitive === true ? '' : 'i');
+        this.#_utils.checkProperty(property);
+        this.#_queryObject[property] = new RegExp(`${value}$`, options?.caseSensitive === true ? '' : 'i');
         return this;
     }
 
@@ -119,13 +119,13 @@ class DataFilter {
      * @returns {DataFilter}
      */
     contains(property: string, value: string, options?: { caseSensitive: boolean }): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
         const words = new Set(value.split(/\s+/).map(word => word.trim()).filter(word => word.length > 0));
         const wordRegex = Array.from(words).map(word => `\\b${word}\\b`).join('|');
         const regexFlags = options?.caseSensitive === true ? '' : 'i';
 
-        this.queryObject[property] = new RegExp(wordRegex, regexFlags);
+        this.#_queryObject[property] = new RegExp(wordRegex, regexFlags);
         return this;
     }
 
@@ -138,9 +138,9 @@ class DataFilter {
      * @returns {DataFilter}
      */
     eq(property: string, value: string | number | boolean | Date): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
-        this.queryObject[property] = { $eq: value }
+        this.#_queryObject[property] = { $eq: value }
         return this;
     }
 
@@ -151,9 +151,9 @@ class DataFilter {
      * @returns {DataFilter}
      */
     ne(property: string, value: string | number | boolean | Date): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
-        this.queryObject[property] = { $ne: value }
+        this.#_queryObject[property] = { $ne: value }
         return this;
     }
 
@@ -164,9 +164,9 @@ class DataFilter {
      * @returns {DataFilter}
      */
     gte(property: string, value: string | number | Date): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
-        this.queryObject[property] = { $gte: value }
+        this.#_queryObject[property] = { $gte: value }
         return this;
     }
 
@@ -177,9 +177,9 @@ class DataFilter {
      * @returns {DataFilter}
      */
     gt(property: string, value: string | number | Date): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
-        this.queryObject[property] = { $gt: value }
+        this.#_queryObject[property] = { $gt: value }
         return this;
     }
 
@@ -190,10 +190,10 @@ class DataFilter {
      * @returns {DataFilter}
      */
     in(property: string, value: (string | number)[]): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
         if (!Array.isArray(value)) { throw `Unable to use the "in" filter on the "${property}" property. The passed value is invalid. Expected an array as a value but instead got ${typeof value}.` }
 
-        this.queryObject[property] = { $in: value }
+        this.#_queryObject[property] = { $in: value }
         return this;
     }
 
@@ -204,10 +204,10 @@ class DataFilter {
      * @returns {DataFilter}
      */
     nin(property: string, value: (string | number)[]): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
         if (!Array.isArray(value)) { throw `Unable to use the "nin" filter on the "${property}" property. The passed value is invalid. Expected an array as a value but instead got ${typeof value}.` }
 
-        this.queryObject[property] = { $nin: value }
+        this.#_queryObject[property] = { $nin: value }
         return this;
     }
 
@@ -218,9 +218,9 @@ class DataFilter {
      * @returns {DataFilter}
      */
     lt(property: string, value: string | number | Date): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
-        this.queryObject[property] = { $lt: value }
+        this.#_queryObject[property] = { $lt: value }
         return this;
     }
 
@@ -231,9 +231,9 @@ class DataFilter {
      * @returns {DataFilter}
      */
     lte(property: string, value: string | number | Date): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
 
-        this.queryObject[property] = { $lte: value }
+        this.#_queryObject[property] = { $lte: value }
         return this;
     }
 
@@ -255,15 +255,15 @@ class DataFilter {
 
             const filters = filter.filter(filterItem => Object.keys(filterItem._filter).length > 0);
             if (filters.length > 0) {
-                const expressions = filters.map(i => this._utils.getFilterExpressions(i._filter));
-                this.queryObject['$and'] = ([] as object[]).concat(...expressions);
+                const expressions = filters.map(i => this.#_utils.getFilterExpressions(i._filter));
+                this.#_queryObject['$and'] = ([] as object[]).concat(...expressions);
             }
         } else {
             if (!(filter instanceof DataFilter)) { throw `The "and" operator only accepts an "DataFilter" as an argument.` }
 
             const keys = Object.keys(filter._filter);
             if (keys.length > 0) {
-                this.queryObject['$and'] = this._utils.getFilterExpressions(filter._filter);
+                this.#_queryObject['$and'] = this.#_utils.getFilterExpressions(filter._filter);
             }
         }
 
@@ -287,15 +287,15 @@ class DataFilter {
 
             const filters = filter.filter(filterItem => Object.keys(filterItem._filter).length > 0);
             if (filters.length > 0) {
-                const expressions = filters.map(i => this._utils.getFilterExpressions(i._filter));
-                this.queryObject['$nor'] = ([] as object[]).concat(...expressions);
+                const expressions = filters.map(i => this.#_utils.getFilterExpressions(i._filter));
+                this.#_queryObject['$nor'] = ([] as object[]).concat(...expressions);
             }
         } else {
             if (!(filter instanceof DataFilter)) { throw `The "nor" operator only accepts an "DataFilter" as an argument.` }
 
             const keys = Object.keys(filter._filter);
             if (keys.length > 0) {
-                this.queryObject['$nor'] = this._utils.getFilterExpressions(filter._filter);
+                this.#_queryObject['$nor'] = this.#_utils.getFilterExpressions(filter._filter);
             }
         }
 
@@ -319,15 +319,15 @@ class DataFilter {
 
             const filters = filter.filter(filterItem => Object.keys(filterItem._filter).length > 0);
             if (filters.length > 0) {
-                const expressions = filters.map(i => this._utils.getFilterExpressions(i._filter));
-                this.queryObject['$or'] = ([] as object[]).concat(...expressions);
+                const expressions = filters.map(i => this.#_utils.getFilterExpressions(i._filter));
+                this.#_queryObject['$or'] = ([] as object[]).concat(...expressions);
             }
         } else {
             if (!(filter instanceof DataFilter)) { throw `The "or" operator only accepts an "DataFilter" as an argument.` }
 
             const keys = Object.keys(filter._filter);
             if (keys.length > 0) {
-                this.queryObject['$or'] = this._utils.getFilterExpressions(filter._filter);
+                this.#_queryObject['$or'] = this.#_utils.getFilterExpressions(filter._filter);
             }
         }
 
@@ -345,7 +345,7 @@ class DataFilter {
 
         const keys = Object.keys(filter._filter);
         if (keys.length > 0) {
-            this.queryObject['$not'] = this._utils.getFilterExpressions(filter._filter);
+            this.#_queryObject['$not'] = this.#_utils.getFilterExpressions(filter._filter);
         }
 
         return this;
@@ -359,11 +359,11 @@ class DataFilter {
      * @returns {DataFilter}
      */
     exists(property: string, value: boolean): DataFilter {
-        this._utils.checkProperty(property);
+        this.#_utils.checkProperty(property);
         if (value === undefined) { throw `The "exists" data operator was called without passing a boolean value.` }
         if (typeof value !== 'boolean') { throw `The value that was passed to the "exists" data operator is invalid. Expected a boolean value but instead got ${typeof value}.`; }
 
-        this.queryObject[property] = { $exists: value }
+        this.#_queryObject[property] = { $exists: value }
         return this;
     }
 
@@ -380,17 +380,17 @@ class DataFilter {
             for (const type of value) {
                 if (expressions.includes(type)) { continue }
 
-                if (this._utils.bson.isSupportedType(type)) {
+                if (this.#_utils.bson.isSupportedType(type)) {
                     expressions.push(type)
                 } else {
                     throw `The "type" data operator received an array containing invalid type: ${type}.`
                 }
             }
 
-            this.queryObject[property] = { $type: expressions }
+            this.#_queryObject[property] = { $type: expressions }
         } else {
-            if (!this._utils.bson.isSupportedType(value)) { throw `The passed type value (${value}) is not a supported type. Please provide a supported type.` }
-            this.queryObject[property] = { $type: value }
+            if (!this.#_utils.bson.isSupportedType(value)) { throw `The passed type value (${value}) is not a supported type. Please provide a supported type.` }
+            this.#_queryObject[property] = { $type: value }
         }
 
         return this;
@@ -401,7 +401,7 @@ class DataFilter {
      * @private 
     */
     get _filter() {
-        return this.queryObject
+        return this.#_queryObject
     }
 }
 

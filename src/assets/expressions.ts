@@ -2,7 +2,7 @@ import helpers from '../utils/helpers';
 import type { GeoNearOptions, GeoWithinOptions, GeoIntersectsOptions } from '../docs/docs';
 
 export class Expressions {
-    private _utils = {
+    readonly #_utils = {
         validateExpression: (expression: any) => {
             if (!(helpers.isValidString(expression) || helpers.isRealObject(expression))) { throw new TypeError(`The expression value can only be a string or an object, instead got ${typeof expression}`) }
         }
@@ -15,7 +15,7 @@ export class Expressions {
      * @example expressions.sum('field') // { $sum: '$field' }
      */
     sum(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $sum: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -26,7 +26,7 @@ export class Expressions {
      * @example expressions.average('field') // { $avg: '$field' }
      */
     average(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $avg: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -37,7 +37,7 @@ export class Expressions {
      * @example expressions.min('field') // { $min: '$field' }
      */
     min(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $min: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -48,7 +48,7 @@ export class Expressions {
      * @example expressions.max('field') // { $max: '$field' }
      */
     max(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $max: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -59,7 +59,7 @@ export class Expressions {
      * @example expressions.first('field') // { $first: '$field' }
      */
     first(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $first: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -70,7 +70,7 @@ export class Expressions {
      * @example expressions.last('field') // { $last: '$field' }
      */
     last(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $last: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -81,7 +81,7 @@ export class Expressions {
      * @example expressions.addToSet('field') // { $addToSet: '$field' }
      */
     addToSet(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $addToSet: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -92,7 +92,7 @@ export class Expressions {
      * @example expressions.push('field') // { $push: '$field' }
      */
     push(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $push: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -103,7 +103,7 @@ export class Expressions {
      * @example expressions.multiply('field') // { $multiply: '$field' }
      */
     multiply(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $multiply: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -114,7 +114,7 @@ export class Expressions {
      * @example expressions.concat('field1', 'field2') // { $concat: ['$field1', '$field2'] }
      */
     concat(...expressions: string[]): object {
-        expressions.forEach(expression => this._utils.validateExpression(expression));
+        expressions.forEach(expression => this.#_utils.validateExpression(expression));
         return { $concat: expressions };
     }
 
@@ -127,7 +127,7 @@ export class Expressions {
      * @example expressions.dateToString({ date: 'dateField', format: '%Y-%m-%d' }) // { $dateToString: { format: '%Y-%m-%d', date: '$dateField' } }
      */
     dateToString({ date, format }: { date: string | object, format: string }): object {
-        this._utils.validateExpression(date);
+        this.#_utils.validateExpression(date);
         return { $dateToString: { format, date: helpers.isValidString(date) ? `$${date}` : date } };
     }
 
@@ -140,7 +140,7 @@ export class Expressions {
      * @example expressions.dateFromString({ dateString: 'dateStringField', format: '%Y-%m-%d' }) // { $dateFromString: { format: '%Y-%m-%d', dateString: '$dateStringField' } }
      */
     dateFromString({ dateString, format }: { dateString: string | object, format: string }): object {
-        this._utils.validateExpression(dateString);
+        this.#_utils.validateExpression(dateString);
         return { $dateFromString: { format, dateString: helpers.isValidString(dateString) ? `$${dateString}` : dateString } };
     }
 
@@ -153,7 +153,7 @@ export class Expressions {
      * @example expressions.substr('field', 0, 5) // { $substr: ['$field', 0, 5] }
      */
     substr(expression: string | object, start: number, length?: number): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         const substr: any = { $substr: [helpers.isValidString(expression) ? `$${expression}` : expression, start] };
         if (length) substr.$substr.push(length);
         return substr;
@@ -166,7 +166,7 @@ export class Expressions {
      * @example expressions.trim('field') // { $trim: { input: '$field' } }
      */
     trim(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $trim: { input: helpers.isValidString(expression) ? `$${expression}` : expression } };
     }
 
@@ -177,7 +177,7 @@ export class Expressions {
      * @example expressions.toUpperCase('field') // { $toUpper: '$field' }
      */
     toUpperCase(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $toUpper: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -188,7 +188,7 @@ export class Expressions {
      * @example expressions.toLowerCase('field') // { $toLower: '$field' }
      */
     toLowerCase(expression: string | object): object {
-        this._utils.validateExpression(expression);
+        this.#_utils.validateExpression(expression);
         return { $toLower: helpers.isValidString(expression) ? `$${expression}` : expression };
     }
 
@@ -210,7 +210,7 @@ export class Expressions {
      * @example const geoWithinOptions = { $geometry: { type: "Polygon", coordinates: [ [ [ x1, y1 ], [ x2, y2 ], [ x3, y3 ], [ x4, y4 ], [ x1, y1 ] ] ] } }; expressions.geoWithin(geoWithinOptions);
      */
     geoWithin(geoWithinOptions: GeoWithinOptions): object {
-        this._utils.validateExpression(geoWithinOptions);
+        this.#_utils.validateExpression(geoWithinOptions);
         return { $geoWithin: geoWithinOptions };
     }
 
@@ -221,7 +221,7 @@ export class Expressions {
      * @example const geoIntersectsOptions = { $geometry: { type: "Point", coordinates: [ longitude, latitude ] } }; expressions.geoIntersects(geoIntersectsOptions);
      */
     geoIntersects(geoIntersectsOptions: GeoIntersectsOptions): object {
-        this._utils.validateExpression(geoIntersectsOptions);
+        this.#_utils.validateExpression(geoIntersectsOptions);
         return { $geoIntersects: geoIntersectsOptions };
     }
 }

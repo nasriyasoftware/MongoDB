@@ -1,12 +1,12 @@
-import helpers from './src/utils/helpers';
-import { DatabaseDefinition, Schema, ClientCreationOptions, ClientAuthorization, ClientUser, CollectionDefinition, SchemaType, CustomSchema } from './src/docs/docs';
-import Client from './src/client';
-import databaseManager from './src/utils/databases';
+import helpers from './utils/helpers';
+import { DatabaseDefinition, Schema, ClientCreationOptions, ClientAuthorization, ClientUser, CollectionDefinition, SchemaType, CustomSchema } from './docs/docs';
+import Client from './client';
+import databaseManager from './utils/databases';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
 class NasriyaData {
-    private _clients: Record<string, MongoClient> = {};
-    private readonly _constants = {
+    #_clients: Record<string, MongoClient> = {};
+    readonly #_constants = {
         schemaTypes: ['String', 'Number', 'Object', 'Array', 'Date', 'Boolean'] as SchemaType[],
     };
 
@@ -56,7 +56,7 @@ class NasriyaData {
                     try {
                         this.schema(collection.schema);
                     } catch (error) {
-                        typeof error === 'string' ? (error = `Collection ${collection.name} Schema error: ${error}`) : typeof error?.message === 'string' ? (error.message = `Collection ${collection.name} Schema error: ${error.message}`) : null;
+                        typeof error === 'string' ? (error = `Collection ${collection.name} Schema error: ${error}`) : error instanceof Error ? (error.message = `Collection ${collection.name} Schema error: ${error.message}`) : null;
                         throw error;
                     }
                 }
@@ -81,7 +81,7 @@ class NasriyaData {
                             if (!possibleValues.includes(permissions.delete)) { throw new TypeError(`The "delete" permission (${permissions.delete}) is not a valid permission`) }
                         } catch (error) {
                             if (typeof error === 'string') { error = `The database (${definition.name}) was provided with invalid "permissions" object: ${error}` }
-                            if (typeof error?.message === 'string') { error.message = `The database (${definition.name}) was provided with invalid "permissions" object: ${error.message}` }
+                            if (error instanceof Error) { error.message = `The database (${definition.name}) was provided with invalid "permissions" object: ${error.message}` }
                             throw error;
                         }
                     }
@@ -101,7 +101,7 @@ class NasriyaData {
                 if (typeof error === 'string') {
                     error = `The database (${definition.name}) was provided with an invalid collection: ${error}`;
                 }
-                if (typeof error?.message === 'string') {
+                if (error instanceof Error) {
                     error.message = `The database (${definition.name}) was provided with an invalid collection: ${error.message}`;
                 }
                 throw error;
@@ -135,7 +135,7 @@ class NasriyaData {
                         // Validate the schema type
                         if (!('type' in selectedSchema)) { throw new SyntaxError(`The schema type is missing`) }
                         if (typeof selectedSchema.type !== 'string') { throw new TypeError(`Expected a string value but got ${typeof selectedSchema.type}`) }
-                        if (![...this._constants.schemaTypes, 'Any'].includes(selectedSchema.type)) { throw new TypeError(`The provided schema type (${selectedSchema.type}) is not a supported schema type`) }
+                        if (![...this.#_constants.schemaTypes, 'Any'].includes(selectedSchema.type)) { throw new TypeError(`The provided schema type (${selectedSchema.type}) is not a supported schema type`) }
                     }
 
                     {
@@ -200,7 +200,7 @@ class NasriyaData {
                     }
                 } catch (error) {
                     if (typeof error === 'string') { error = `The property (${property}) was defined with an invalid schema: ${error}` }
-                    if (typeof error?.message === 'string') { error.message = `The property (${property}) was defined with an invalid schema: ${error.message}` }
+                    if (error instanceof Error) { error.message = `The property (${property}) was defined with an invalid schema: ${error.message}` }
                     throw error;
                 }
             } else {
@@ -209,7 +209,7 @@ class NasriyaData {
 
 
             // Check if the value is one of the defined schema types, or a custom schema
-            if (typeof selectedSchema === 'string' && this._constants.schemaTypes.includes(selectedSchema)) {
+            if (typeof selectedSchema === 'string' && this.#_constants.schemaTypes.includes(selectedSchema)) {
                 continue;
             } else {
 
@@ -229,7 +229,7 @@ class NasriyaData {
      * Get a list of the defined connections
      * @returns {string[]}
      */
-    get connections(): string[] { return Object.keys(this._clients) }
+    get connections(): string[] { return Object.keys(this.#_clients) }
 
     /**
      * Get a database object based on a name
@@ -269,11 +269,11 @@ class NasriyaData {
                 },
             };
 
-            this._clients[name] = new MongoClient(connectionString, clientOptions as any);
+            this.#_clients[name] = new MongoClient(connectionString, clientOptions as any);
             return name;
         } catch (error) {
             if (typeof error === 'string') { error = `Cannot define a NasriyaData Client: ${error}` }
-            if (typeof error?.message === 'string') { error.message = `Cannot define NasriyaData Client: ${error.message}` }
+            if (error instanceof Error) { error.message = `Cannot define NasriyaData Client: ${error.message}` }
             throw error;
         }
     }
@@ -330,8 +330,8 @@ class NasriyaData {
 
             if ('connection' in options) {
                 if (typeof options.connection !== 'string') { throw new TypeError(`The provided "connection" value must be a string value, instead got ${typeof options.connection}`) }
-                if (!(options.connection in this._clients)) { throw `The provided "connection" name (${options.connection}) is not defined. Use the "defineConnection" method to define a connection` }
-                constructorOptions.client = this._clients[options.connection];
+                if (!(options.connection in this.#_clients)) { throw `The provided "connection" name (${options.connection}) is not defined. Use the "defineConnection" method to define a connection` }
+                constructorOptions.client = this.#_clients[options.connection];
             } else {
                 throw new SyntaxError(`The "createClient" options are missing the "connection" property`);
             }
@@ -371,7 +371,7 @@ class NasriyaData {
 
             return new Client(constructorOptions);
         } catch (error) {
-            throw new Error(error);
+            throw error;
         }
     }
 }
