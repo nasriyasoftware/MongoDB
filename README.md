@@ -203,7 +203,7 @@ When defining a database client dynamically based on the user's data, the permis
 
 ## Usage
 ```
-To be implemented ...
+Documentations are being written ...
 ```
 ___
 ## License
