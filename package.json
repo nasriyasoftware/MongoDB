@@ -1,24 +1,33 @@
 {
-  "name": "nasriya-mongodb",
+  "name": "@nasriya/mongodb",
   "version": "1.0.0",
   "description": "A MongoDB client with Schema & Authorization support.",
-  "main": "./dist/cjs/adapter.js",
-  "module": "./dist/esm/adapter.js",
+  "main": "./dist/cjs/adapter.cjs",
+  "module": "./dist/esm/adapter.mjs",
   "types": "./dist/@types/adapter.d.ts",
   "files": [
     "dist/**/*"
   ],
   "exports": {
     ".": {
-      "import": "./dist/esm/adapter.js",
-      "require": "./dist/cjs/adapter.js",
+      "import": "./dist/esm/adapter.cjs",
+      "require": "./dist/cjs/adapter.mjs",
       "types": "./dist/@types/adapter.d.ts"
     }
   },
+  "maintainers": [
+    {
+      "name": "Ahmad Nasriya",
+      "email": "ahmad@nasriya.net",
+      "url": "https://www.linkedin.com/in/ahmadnasriya/"
+    }
+  ],
   "scripts": {
-    "build": "npm run build:esm && npm run build:cjs",
+    "build": "npm run build:esm && npm run build:cjs && npm run rename && npm run copyFiles",
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
+    "rename": "mod-js",
+    "copyFiles": "ns-copySrc",
     "test": "jest"
   },
   "repository": {
@@ -26,9 +35,15 @@
     "url": "https://github.com/nasriyasoftware/MongoDB"
   },
   "author": "Nasriya Software, LLC.",
-  "license": "ISC",
+  "license": "Nasriya License",
   "dependencies": {
-    "mongodb": "^6.5.0",
-    "nasriya-uuidx": "github:nasriyasoftware/uuidx"
+    "@nasriya/uuidx": "^1.0.0",
+    "mongodb": "^6.5.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "nasriya-copyfiles": "github:nasriyasoftware/CopyFiles",
+    "nasriya-modularizejs": "github:nasriyasoftware/ModularizeJS",
+    "ts-jest": "^29.1.4"
   }
 }

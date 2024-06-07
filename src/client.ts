@@ -7,7 +7,7 @@ import DataFilter from './assets/filter';
 import DataQuery from './assets/query';
 import DataAggregate from './assets/aggregate';
 import aggExps, { Expressions } from './assets/expressions';
-import uuidx from 'nasriya-uuidx';
+import uuidx from '@nasriya/uuidx';
 import NasriyaData from './adapter';
 
 class NasriyaDataClient {

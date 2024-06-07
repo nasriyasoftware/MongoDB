@@ -4,31 +4,32 @@
 ##### Visit us at [www.nasriya.net](https://nasriya.net).
 
 A MongoDB client with [schemas](#collection-schemas), [data-hooks](#collection-hooks), [permissions](#collection-permissions), and more.
+
 Made with ❤️ in **Palestine** 🇵🇸
 ___
 ## Quick Start Guide
 
 ### Installation
 ```shell
-npm install nasriyasoftware/MongoDB
+npm i @nasriya/mongodb
 ```
 
 ### Importing
 To use the cron scheduler, you must first import the cron-manager instance:
 Import in **ES6** modules:
-```ts
-import dbAdapter from 'nasriya-mongodb';
+```js
+import dbAdapter from '@nasriya/mongodb';
 ```
 
 Import in **CommonJS (CJS)**
 ```js
-const dbAdapter = require('nasriya-mongodb').default;
+const dbAdapter = require('@nasriya/mongodb').default;
 ```
 
 ## Preparing the Environment
 ##### Defining Databases
 Our *MongoDB* client allows you define your databases and their collections, let's define one or two:
-```ts
+```js
 dbAdapter.defineDatabase({
     name: 'Auth',
     collections: [{ name: 'Passwords' }, { name: 'AuthHistory' }]
@@ -40,14 +41,14 @@ In our example above, we defined a database `Auth` with two collections, `Passwo
 ##### Collection Schemas
 We can improve the collection definition and validation by defining Schemas for our collections. To do that, we'll use the `schema()` method on the adapter to create and validate our schema object. While you can directly pass the schema object to the collection definition, it's recommended to use the `schema()` method for easier debugging if anything went wrong.
 
-```ts
+```js
 const pswdsSchema = dbAdapter.schema({
     hashed: {
         type: 'String',
         required: true,
         validity: {
             message: 'The hashed value you passed is invalid',
-            handler: (value: any): boolean => {
+            handler: (value): boolean => {
                 if (typeof value === 'string' && (value.length >=10 && value.length <= 32)) {
                     return true;
                 } else {
@@ -68,7 +69,7 @@ In our example above, we defined the `hashed` property as a `String` and set it 
 We also defined the `expireAfter` property as a `Number`, and set a default value of 30 days in case the user didn't provide one.
 
 That's how the DB definition becomes:
-```ts
+```js
 dbAdapter.defineDatabase({
     name: 'Auth',
     collections: [{ 
@@ -81,7 +82,7 @@ dbAdapter.defineDatabase({
 ##### Collection Permissions
 You can also set the IO permissions on each collection based on user authorizations.
 
-```ts
+```js
 dbAdapter.defineDatabase({
     name: 'Auth',
     collections: [{ 
@@ -124,7 +125,7 @@ The available hooks that you can use are:
 
 To implement and data hook, add a `hooks` property to a collection definition, and add the event handler.
 
-```ts
+```js
 dbAdapter.defineDatabase({
     name: 'Auth',
     collections: [{ 
@@ -155,7 +156,7 @@ Our *MongoDB* client offers lots of flexibilities for your needs, you can create
 Each client needs a defined connection to a cluster, and since you can create as many clients as you want, and some times you need multiple clients to be connected to the same cluster, you only need to define a collection once, and use it as many times as you want.
 
 Let's start by defining a connection:
-```ts
+```js
 const localServer = dbAdapter.defineConnection('localServer', 'mongodb://localhost:27017');
 
 console.log(localServer); // ⇨ 'localServer'
@@ -169,7 +170,7 @@ To create a client, you need to pass an options object to the `createClient` met
 In our example, we'll demonstrate how you can create clients in your application.
 
 Create a `System` client. This type of client bypasses all the defined permissions, and is intended to keep track of things that are not user related.
-```ts
+```js
 /**A client that does NOT do user-related operations */
 const systemClient = dbAdapter.createClient({
     name: 'localServer', // A name of a defined connection
@@ -179,7 +180,7 @@ const systemClient = dbAdapter.createClient({
 
 You can also create a clinet for user operations. We'll use [HyperCloud](https://github.com/nasriyasoftware/HyperCloud) server framework to demonstrate how:
 
-```ts
+```js
 router.patch('/users/<:userId>', (request, response, next) => {
     const { userId } = request.params;
     if (!request.user.loggedIn || request.user.id !== userId) { return response.pages.unauthorized() }
@@ -202,8 +203,9 @@ router.patch('/users/<:userId>', (request, response, next) => {
 When defining a database client dynamically based on the user's data, the permissions and roles associated with that user are enforced directly within the client configuration. This ensures that unauthorized users cannot bypass the permissions set for their specific roles, thereby maintaining strict access control. By integrating user-specific data such as ID, role, and login status into the client creation process, you can securely perform database operations while ensuring that only authorized users can access or modify the data. This method provides a robust mechanism for safeguarding sensitive information and enforcing user-specific access policies.
 
 ## Usage
+It's easy to follow the auto-completion of the package.
 ```
-Documentations are being written ...
+Documentations will come soon ...
 ```
 ___
 ## License
