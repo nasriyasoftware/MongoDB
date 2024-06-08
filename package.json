@@ -1,6 +1,6 @@
 {
   "name": "@nasriya/mongodb",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A MongoDB client with Schema & Authorization support.",
   "main": "./dist/cjs/adapter.cjs",
   "module": "./dist/esm/adapter.mjs",
