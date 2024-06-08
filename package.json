@@ -36,7 +36,7 @@
   "author": "Nasriya Software, LLC.",
   "license": "Nasriya License",
   "dependencies": {
-    "@nasriya/uuidx": "^1.0.0",
+    "@nasriya/uuidx": "^1.0.1",
     "mongodb": "^6.5.0"
   },
   "devDependencies": {
