@@ -21,7 +21,7 @@ Import in **ESM** modules:
 import mongodb from '@nasriya/mongodb';
 ```
 
-Import in **CommonJS (CJS)**npm
+Import in **CommonJS (CJS)**
 ```js
 const mongodb = require('@nasriya/mongodb').default;
 ```
