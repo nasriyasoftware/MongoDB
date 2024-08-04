@@ -1,6 +1,6 @@
 {
   "name": "@nasriya/mongodb",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A MongoDB client with Schema & Authorization support.",
   "main": "./dist/cjs/adapter.js",
   "module": "./dist/esm/adapter.js",
@@ -36,13 +36,13 @@
   "author": "Nasriya Software, LLC.",
   "license": "Nasriya License",
   "dependencies": {
-    "@nasriya/cron": "^1.0.3",
+    "@nasriya/cron": "^1.0.5",
     "@nasriya/uuidx": "^1.0.2",
-    "mongodb": "^6.5.0"
+    "mongodb": "^6.8.0"
   },
   "devDependencies": {
-    "@nasriya/postbuild": "^1.0.1",
+    "@nasriya/postbuild": "^1.1.2",
     "@types/jest": "^29.5.12",
-    "ts-jest": "^29.1.4"
+    "ts-jest": "^29.2.4"
   }
 }

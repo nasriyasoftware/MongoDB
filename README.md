@@ -16,21 +16,21 @@ npm i @nasriya/mongodb
 
 ### Importing
 To use the cron scheduler, you must first import the cron-manager instance:
-Import in **ES6** modules:
+Import in **ESM** modules:
 ```js
-import dbAdapter from '@nasriya/mongodb';
+import mongodb from '@nasriya/mongodb';
 ```
 
-Import in **CommonJS (CJS)**
+Import in **CommonJS (CJS)**npm
 ```js
-const dbAdapter = require('@nasriya/mongodb').default;
+const mongodb = require('@nasriya/mongodb').default;
 ```
 
 ## Preparing the Environment
 ##### Defining Databases
 Our *MongoDB* client allows you define your databases and their collections, let's define one or two:
 ```js
-dbAdapter.defineDatabase({
+mongodb.defineDatabase({
     name: 'Auth',
     collections: [{ name: 'Passwords' }, { name: 'AuthHistory' }]
 })
@@ -42,7 +42,7 @@ In our example above, we defined a database `Auth` with two collections, `Passwo
 We can improve the collection definition and validation by defining Schemas for our collections. To do that, we'll use the `schema()` method on the adapter to create and validate our schema object. While you can directly pass the schema object to the collection definition, it's recommended to use the `schema()` method for easier debugging if anything went wrong.
 
 ```js
-const pswdsSchema = dbAdapter.schema({
+const pswdsSchema = mongodb.schema({
     hashed: {
         type: 'String',
         required: true,
@@ -70,7 +70,7 @@ We also defined the `expireAfter` property as a `Number`, and set a default valu
 
 That's how the DB definition becomes:
 ```js
-dbAdapter.defineDatabase({
+mongodb.defineDatabase({
     name: 'Auth',
     collections: [{ 
         name: 'Passwords',
@@ -83,7 +83,7 @@ dbAdapter.defineDatabase({
 You can also set the IO permissions on each collection based on user authorizations.
 
 ```js
-dbAdapter.defineDatabase({
+mongodb.defineDatabase({
     name: 'Auth',
     collections: [{ 
         name: 'Passwords',
@@ -126,7 +126,7 @@ The available hooks that you can use are:
 To implement and data hook, add a `hooks` property to a collection definition, and add the event handler.
 
 ```js
-dbAdapter.defineDatabase({
+mongodb.defineDatabase({
     name: 'Auth',
     collections: [{ 
         name: 'Passwords',
@@ -157,7 +157,7 @@ Each client needs a defined connection to a cluster, and since you can create as
 
 Let's start by defining a connection:
 ```js
-const localServer = dbAdapter.defineConnection('localServer', 'mongodb://localhost:27017');
+const localServer = mongodb.defineConnection('localServer', 'mongodb://localhost:27017');
 
 console.log(localServer); // ⇨ 'localServer'
 ```
@@ -172,7 +172,7 @@ In our example, we'll demonstrate how you can create clients in your application
 Create a `System` client. This type of client bypasses all the defined permissions, and is intended to keep track of things that are not user related.
 ```js
 /**A client that does NOT do user-related operations */
-const systemClient = dbAdapter.createClient({
+const systemClient = mongodb.createClient({
     name: 'localServer', // A name of a defined connection
     authorization: 'System'
 });
@@ -185,7 +185,7 @@ router.patch('/users/<:userId>', (request, response, next) => {
     const { userId } = request.params;
     if (!request.user.loggedIn || request.user.id !== userId) { return response.pages.unauthorized() }
 
-    const dbClient = dbAdapter.createClient({
+    const dbClient = mongodb.createClient({
         name: 'localServer', // A name of a defined connection
         authorization: 'User',
         user: {

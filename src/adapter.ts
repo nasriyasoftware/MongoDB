@@ -382,4 +382,5 @@ export {
     Schema
 }
 
-export default new NasriyaData();
+const mongodb = new NasriyaData()
+export default mongodb;
