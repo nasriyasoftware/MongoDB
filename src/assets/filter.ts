@@ -1,4 +1,5 @@
 import type { DataBSONType } from '../docs/docs';
+import helpers from '../utils/helpers';
 
 class DataFilter {
     /** The query filter object */
@@ -30,17 +31,18 @@ class DataFilter {
         }
     })
 
+
     /**
      * Refines a query or filter to match items whose specified property value is within a specified range.
-     * @param {string} property 
-     * @param {(string|number|Date)[]} start The beginning value of the range to match against.
-     * @param {(string|number|Date)[]} end The ending value of the range to match against.
+     * @param {string} property The property to filter by.
+     * @param {string|number|Date} start The beginning value of the range to match against.
+     * @param {string|number|Date} end The ending value of the range to match against.
      * @throws {TypeError} If the start or end value is not a string, number, or Date instance.
      * @throws {TypeError} If the end value is not the same type as the start value.
      * @throws {RangeError} If the start value is greater than the end value.
      * @returns {DataFilter}
      */
-    between(property: string, start: (string | number | Date)[], end: (string | number | Date)[]): DataFilter {
+    between(property: string, start: string | number | Date, end: string | number | Date): DataFilter {
         this.#_utils.checkProperty(property);
 
         // Checking types
@@ -50,7 +52,7 @@ class DataFilter {
         if (startType !== endType) { throw new TypeError(`Unable to use the "between" filter on the "${property}" property. The passed end value is not the same type as the start value`) }
 
         // Validating ranges
-        if (start > end) { throw new RangeError(`Unable to use the "between" filter on the "${property}" property. The start value (${startType === 'date' ? start.toString() : start}) cannot be greator than the end value (${endType === 'date' ? end.toString() : end})`) }
+        if (start > end) { throw new RangeError(`Unable to use the "between" filter on the "${property}" property. The start value (${startType === 'date' ? start.toString() : start}) cannot be greater than the end value (${endType === 'date' ? end.toString() : end})`) }
 
         // Setting the filter
         this.#_queryObject[property] = { $gte: start, $lte: end }
@@ -129,31 +131,105 @@ class DataFilter {
         return this;
     }
 
-    // Comparision Operators
+    // Comparison Operators
 
     /**
      * (Equal to) Refines a query or filter to match items whose specified property value equals the specified value.
-     * @param {string} property The property whose value will be compared with value.
-     * @param {string|number|boolean|Date} value The value to match against.
-     * @returns {DataFilter}
+     * For string values, you can optionally make the comparison case-insensitive.
+     *
+     * If `caseSensitive` is provided, it must be a boolean and only applies to string values.
+     * Throws a `SyntaxError` if `caseSensitive` is provided for non-string values.
+     *
+     * @param {string} property - The property whose value will be compared with the provided value.
+     * @param {string | number | boolean | Date} value - The value to match against.
+     * @param {{ caseSensitive: boolean }} [options] - Optional settings object to control comparison behavior.
+     * @param {boolean} [options.caseSensitive=true] - Whether the comparison should be case-sensitive (only applies to string values).
+     *
+     * @throws {TypeError} If options is not a plain object.
+     * @throws {TypeError} If options.caseSensitive is defined but not a boolean.
+     * @throws {SyntaxError} If options.caseSensitive is provided for non-string values.
+     *
+     * @returns {DataFilter} The current filter instance for chaining.
+     *
+     * @example
+     * // Strict match (default)
+     * filter.eq("username", "Admin");
+     *
+     * @example
+     * // Case-insensitive string match
+     * filter.eq("username", "admin", { caseSensitive: false });
      */
-    eq(property: string, value: string | number | boolean | Date): DataFilter {
+    eq(property: string, value: string | number | boolean | Date, options?: { caseSensitive: boolean }): DataFilter {
         this.#_utils.checkProperty(property);
+        const valueIsString = typeof value === 'string';
 
-        this.#_queryObject[property] = { $eq: value }
+        if (options !== undefined) {
+            if (!helpers.isRealObject(options)) { throw new TypeError(`The provided options object is invalid. Expected an object but instead got ${typeof options}.`) }
+
+            if (helpers.hasOwnProperty(options, 'caseSensitive')) {
+                if (!valueIsString) { throw new SyntaxError(`The "caseSensitive" option is only valid for string values.`) }
+                if (typeof options.caseSensitive !== 'boolean') { throw new TypeError(`The "caseSensitive" option is invalid. Expected a boolean but instead got ${typeof options.caseSensitive}.`) }
+            }
+        }
+
+        const caseSensitive = options?.caseSensitive ?? true;
+        if (valueIsString && caseSensitive === false) {
+            const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex special chars
+            this.#_queryObject[property] = new RegExp(`^${escaped}$`, 'i');
+        } else {
+            this.#_queryObject[property] = { $eq: value };
+        }
+
         return this;
     }
 
     /**
      * (Not equal to) Refines a query or filter to match items whose specified property value does not equal the specified value.
-     * @param {string} property The property whose value will be compared with value.
-     * @param {string|number|boolean|Date} value The value to match against.
-     * @returns {DataFilter}
+     * For string values, you can optionally make the comparison case-insensitive.
+     *
+     * If `caseSensitive` is provided, it must be a boolean and only applies to string values.
+     * Throws a `SyntaxError` if `caseSensitive` is provided for non-string values.
+     *
+     * @param {string} property - The property whose value will be compared with the provided value.
+     * @param {string | number | boolean | Date} value - The value to match against.
+     * @param {{ caseSensitive: boolean }} [options] - Optional settings object to control comparison behavior.
+     * @param {boolean} [options.caseSensitive=true] - Whether the comparison should be case-sensitive (only applies to string values).
+     *
+     * @throws {TypeError} If options is not a plain object.
+     * @throws {TypeError} If options.caseSensitive is defined but not a boolean.
+     * @throws {SyntaxError} If options.caseSensitive is provided for non-string values.
+     *
+     * @returns {DataFilter} The current filter instance for chaining.
+     *
+     * @example
+     * // Strict match (default)
+     * filter.ne("username", "Admin");
+     *
+     * @example
+     * // Case-insensitive "not equal" match
+     * filter.ne("username", "admin", { caseSensitive: false });
      */
-    ne(property: string, value: string | number | boolean | Date): DataFilter {
+    ne(property: string, value: string | number | boolean | Date, options?: { caseSensitive: boolean }): DataFilter {
         this.#_utils.checkProperty(property);
+        const valueIsString = typeof value === 'string';
 
-        this.#_queryObject[property] = { $ne: value }
+        if (options !== undefined) {
+            if (!helpers.isRealObject(options)) { throw new TypeError(`The provided options object is invalid. Expected an object but instead got ${typeof options}.`) }
+
+            if (helpers.hasOwnProperty(options, 'caseSensitive')) {
+                if (!valueIsString) { throw new SyntaxError(`The "caseSensitive" option is only valid for string values.`) }
+                if (typeof options.caseSensitive !== 'boolean') { throw new TypeError(`The "caseSensitive" option is invalid. Expected a boolean but instead got ${typeof options.caseSensitive}.`) }
+            }
+        }
+
+        const caseSensitive = options?.caseSensitive ?? true;
+        if (valueIsString && caseSensitive === false) {
+            const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex special characters
+            this.#_queryObject[property] = { $ne: new RegExp(`^${escaped}$`, 'i') };
+        } else {
+            this.#_queryObject[property] = { $ne: value }
+        }
+
         return this;
     }
 

@@ -1,5 +1,5 @@
 import helpers from './utils/helpers';
-import { DatabaseDefinition, Schema, ClientCreationOptions, ClientAuthorization, ClientUser, CollectionDefinition, SchemaType, CustomSchema } from './docs/docs';
+import { DatabaseDefinition, Schema, ClientCreationOptions, ClientAuthorization, ClientUser, CollectionDefinition, SchemaType, CollectionItem } from './docs/docs';
 import Client from './client';
 import databaseManager from './utils/databases';
 import { MongoClient, ServerApiVersion } from 'mongodb';
@@ -12,7 +12,7 @@ class NasriyaData {
 
     /**
      * Define a database to the list of defined databases.
-     * @param {DatabaseDefinition} definition The database definitionuration
+     * @param {DatabaseDefinition} definition The database definition configuration
      * @throws {Error} If the value of `definition` is not a real object
      * @throws {SyntaxError} If the `definition` is missing any of the required properties
      * @throws {TypeError} If the expected type of the properties didn't match the provided values' types
@@ -379,7 +379,8 @@ class NasriyaData {
 export {
     DatabaseDefinition,
     CollectionDefinition,
-    Schema
+    Schema,
+    CollectionItem
 }
 
 const mongodb = new NasriyaData()

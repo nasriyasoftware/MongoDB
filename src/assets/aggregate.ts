@@ -144,7 +144,7 @@ class DataAggregate {
      * 
      * **Notes:**
      * - You can add as many sorts as you want.
-     * - Multiple sorts for the same property will overrwrite each others. Only the last one will apply.
+     * - Multiple sorts for the same property will overwrite each others. Only the last one will apply.
      * @param {string} property The property or field to sort the results with.
      * @returns {DataAggregate}
      */
@@ -163,7 +163,7 @@ class DataAggregate {
      * 
      * **Notes:**
      * - You can add as many sorts as you want.
-     * - Multiple sorts for the same property will overrwrite each others. Only the last one will apply.
+     * - Multiple sorts for the same property will overwrite each others. Only the last one will apply.
      * @param {string} property The property or field to sort the results with.
      * @returns {DataAggregate}
      */

@@ -72,7 +72,7 @@ class QueryResult {
     get items() { return this.#_results.items }
 
     /**Check whether there are next pages or not */
-    hasNext() { return this.#_config.page.num < this.#_totalPages }
+    hasNext(): boolean { return this.#_config.page.num < this.#_totalPages }
 
     /**Retrieve the next page of items */
     async next(): Promise<CollectionItem[]> {

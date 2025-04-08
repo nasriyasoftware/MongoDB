@@ -51,6 +51,17 @@ class Helpers {
             return false
         }
     }
+
+    /**
+     * Checks if an object has a specific property as its own property.
+     * @param {any} obj The object to check
+     * @param {string} prop The property to look for
+     * @returns {boolean} True if the object has the property, false otherwise
+     * @since v1.0.7
+     */
+    hasOwnProperty(obj: any, prop: string): boolean {
+        return this.isRealObject(obj) && Object.prototype.hasOwnProperty.call(obj, prop);
+    }
 }
 
 export default new Helpers;

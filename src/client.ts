@@ -334,7 +334,7 @@ class NasriyaDataClient {
          * @param {string|undefined} itemId 
          * @returns {Promise<boolean>} Whether the item exist or not.
          */
-        checkExistance: async (databaseName: string, collectionName: string, itemId: string | undefined): Promise<boolean> => {
+        checkExistence: async (databaseName: string, collectionName: string, itemId: string | undefined): Promise<boolean> => {
             if (!helpers.isValidString(itemId)) { return false }
             const item = await this.#_client.db(databaseName).collection(collectionName).findOne({ _id: itemId as any });
             return item ? true : false;
@@ -346,7 +346,7 @@ class NasriyaDataClient {
          * @param {Item[]} items 
          * @returns {Promise<{ toUpdate: Item[], toInsert: object[] }>}
          */
-        checkItemsExistance: async (databaseName: string, collectionName: string, items: Item[]): Promise<{ toUpdate: Item[]; toInsert: Item[]; }> => {
+        checkItemsExistence: async (databaseName: string, collectionName: string, items: Item[]): Promise<{ toUpdate: Item[]; toInsert: Item[]; }> => {
             const toInsert: Item[] = [];
             const toUpdate: Item[] = [];
             const toCheck: Promise<void>[] = [];
@@ -358,7 +358,7 @@ class NasriyaDataClient {
                     if (typeof item._id !== 'string') { throw new TypeError(`The item you're trying to save has an invalid "_id" value. Expects a string but got ${typeof item._id}`) }
                     if (item._id.length === 0) { throw new RangeError(`The item "_id" cannot be an empty string`) }
                     toCheck.push(new Promise<void>((resolve, reject) => {
-                        this.#_helpers.checkExistance(databaseName, collectionName, item._id).then(exist => {
+                        this.#_helpers.checkExistence(databaseName, collectionName, item._id).then(exist => {
                             if (exist === true) { toUpdate.push(item) } else { toInsert.push(item) }
                             resolve();
                         }).catch(err => reject(err));
@@ -373,7 +373,7 @@ class NasriyaDataClient {
                 const result = await Promise.allSettled(toCheck);
                 const rejected = result.filter(i => i.status === 'rejected');
                 if (rejected.length > 0) {
-                    console.error(`System Error: Unable to check items existance`)
+                    console.error(`System Error: Unable to check items Existence`)
                 }
             }
 
@@ -753,7 +753,6 @@ class NasriyaDataClient {
         const collection = database.collections.find(i => i.name === collectionName);
         if (!collection) { throw `The collection ${collectionName} does not exist on the ${database.name} database` }
 
-
         return new DataAggregate(
             { database, collection, authorization: this.authorization, user: this.#_config.user },
             this.#_client,
@@ -785,7 +784,7 @@ class NasriyaDataClient {
      */
     async getItem(collectionName: string, itemId: string, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<CollectionItem | null> {
         const accessType = 'read';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'String', value: itemId }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
@@ -819,11 +818,11 @@ class NasriyaDataClient {
      * @param {string} collectionName The collection ID to be used
      * @param {Item} item The item to be inserted
      * @param {NasriyaDataOptions} [options] Operation options
-     * @returns {Promise<CollectionItem>} The ID of the inserted item
+     * @returns {Promise<CollectionItem>} The inserted item
      */
     async insert(collectionName: string, item: Item, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<CollectionItem> {
         const accessType = 'write';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
@@ -860,7 +859,7 @@ class NasriyaDataClient {
      */
     async bulkInsert(collectionName: string, items: Item[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<BulkInsertResult> {
         const accessType = 'write';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
         const { collection } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
@@ -911,7 +910,7 @@ class NasriyaDataClient {
      */
     async remove(collectionName: string, itemId: string, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<string> {
         const accessType = 'delete';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'String', value: itemId }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
@@ -951,7 +950,7 @@ class NasriyaDataClient {
      */
     async bulkRemove(collectionName: string, itemsIds: string[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<number> {
         const accessType = 'delete';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'Array', value: itemsIds }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
@@ -989,7 +988,7 @@ class NasriyaDataClient {
      */
     async update(collectionName: string, item: Item, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<string> {
         const accessType = 'modify';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
@@ -1030,7 +1029,7 @@ class NasriyaDataClient {
      */
     async bulkUpdate(collectionName: string, items: Item[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<number> {
         const accessType = 'modify';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
@@ -1097,13 +1096,13 @@ class NasriyaDataClient {
      */
     async save(collectionName: string, item: Item, options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<SaveResult> {
         const accessType = 'modify';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'Object', value: item }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
-            const exist = await this.#_helpers.checkExistance(this.#_config.database.selected, collectionName, item?._id);
+            const exist = await this.#_helpers.checkExistence(this.#_config.database.selected, collectionName, item?._id);
             const writePermission = options?.suppressAuth === true ? 'Allowed' : exist === true ? null : this.#_utils.authUser(collection.permissions?.write);
             if (writePermission === 'Denied') { throw `Access Denied: The current user (${context.userId}) does not have ${'write'.toUpperCase()} permissions on the ${collection.name} collection` }
 
@@ -1140,7 +1139,6 @@ class NasriyaDataClient {
         }
     }
 
-
     /**
      * Save (insert/update) a set of items (objects) in a database collection
      * 
@@ -1169,13 +1167,13 @@ class NasriyaDataClient {
      */
     async bulkSave(collectionName: string, items: Item[], options: NasriyaDataOptions = { suppressAuth: false, suppressHooks: false }): Promise<BulkSaveResult> {
         const accessType = 'modify';
-        // Run prechecks
+        // Run pre-checks
         await this.#_utils.checkArgs(collectionName, { type: 'Array', value: items }, options);
         const { collection, permission } = this.#_utils.prepareEvent({ collectionName: collectionName, accessType, options })
         const context = { collectionName: collection.name, userId: this.#_config.user.id, userRole: this.#_config.user.role }
 
         try {
-            const { toUpdate, toInsert } = await this.#_helpers.checkItemsExistance(this.#_config.database.selected, collectionName, items);
+            const { toUpdate, toInsert } = await this.#_helpers.checkItemsExistence(this.#_config.database.selected, collectionName, items);
             const writePermission = options?.suppressAuth === true ? 'Allowed' : toInsert.length > 0 ? this.#_utils.authUser(collection.permissions?.write) : null;
             if (writePermission === 'Denied') { throw `Access Denied: The current user (${context.userId}) does not have ${'write'.toUpperCase()} permissions on the ${collection.name} collection` }
 

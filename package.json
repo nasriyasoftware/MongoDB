@@ -1,7 +1,7 @@
 {
   "name": "@nasriya/mongodb",
-  "version": "1.0.6",
-  "description": "A MongoDB client with Schema & Authorization support.",
+  "version": "1.0.7",
+  "description": "A MongoDB client with Schemas, Data Hooks, and Authorization support.",
   "main": "./dist/cjs/adapter.js",
   "module": "./dist/esm/adapter.js",
   "types": "./dist/@types/adapter.d.ts",
@@ -33,17 +33,17 @@
     "type": "git",
     "url": "https://github.com/nasriyasoftware/MongoDB"
   },
-  "author": "Nasriya Software, LLC.",
+  "author": "Nasriya Software",
   "license": "Nasriya License",
   "dependencies": {
-    "@nasriya/cron": "^1.0.6",
-    "@nasriya/uuidx": "^1.0.2",
-    "mongodb": "^6.8.0"
+    "@nasriya/cron": "^1.0.7",
+    "@nasriya/uuidx": "^1.0.3",
+    "mongodb": "^6.15.0"
   },
   "devDependencies": {
-    "@nasriya/postbuild": "^1.1.4",
-    "@types/jest": "^29.5.12",
-    "ts-jest": "^29.2.4"
+    "@nasriya/postbuild": "^1.1.5",
+    "@types/jest": "^29.5.14",
+    "ts-jest": "^29.3.1"
   },
   "funding": {
     "type": "individual",
